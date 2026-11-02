@@ -219,6 +219,16 @@ composer test
 
 Every rule pairs with a corpus of `tests/fixtures/<rule>/*.before.xml` / `*.after.xml` files. The test for each rule runs the transform against every `*.before.xml` and asserts byte-equality with the corresponding `*.after.xml`. New observed dirty patterns turn into new fixture pairs.
 
+### Mutation testing
+
+```
+composer mutate -- --class="UAMSWeb\\Aether\\WordPressImporter\\Cleanup\\Rules\\CollapseBareDoubleBr" --no-cache
+```
+
+Use `composer mutate`, never a bare `vendor/bin/pest --mutate`. It passes a relative `--path=src`, and on Windows that matters twice. `phpunit.xml` hands the mutate plugin an absolute `src` path, and the plugin's `FileFinder` treats a drive-letter path (`D:\...`) as relative and prepends the working directory, so it finds no files and prints `0 Mutations for 0 Files created`. A bare `vendor/bin/pest` also reaches each mutant's child process with forward slashes, which `cmd.exe` cannot launch, so every mutant can score as killed without running. The `@php` prefix in the script normalizes the separator.
+
+A run that worked prints a non-zero `Files created` count and, on a class with weak tests, some `UNTESTED` survivors. Measured on Windows 11, PHP 8.4.27 with PCOV, `pest-plugin-mutate` 4.0.1: `CollapseBareDoubleBr` reports `0 Mutations for 0 Files created` without `--path=src` and `74 Mutations for 1 Files created` with it. macOS is not measured.
+
 ### Adding a fixture
 
 1. Author a `<id>.before.xml` containing the dirty WXR snippet you want to cover.

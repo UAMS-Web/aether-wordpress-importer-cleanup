@@ -40,6 +40,10 @@
     },
     "scripts": {
         "test": "pest",
+        "mutate": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php vendor/bin/pest --mutate --path=src"
+        ],
         "refactor": "rector",
         "refactor:sweep": "rector --clear-cache --config=rector-sweep.php",
         "test:refactor": "rector --dry-run",
