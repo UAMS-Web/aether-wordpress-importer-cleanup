@@ -38,6 +38,9 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class LiftTrailingBr implements Rule
 {
+    // The coverage driver reports no executable line for a constant initializer, so these mutants read as uncovered;
+    // the dataset in LiftTrailingBrTest pins every entry.
+    // @pest-mutate-ignore: RemoveArrayItem
     private const array SKIP_PARENTS = ['body', 'p', 'li', 'td', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
 
     public function apply(DOMDocument $document): void
@@ -68,6 +71,9 @@ final class LiftTrailingBr implements Rule
     {
         $parent = $br->parentNode;
 
+        // A br found by //br in an HTML body always has an element parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: FalseToTrue
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $parent instanceof DOMElement) {
             return false;
         }
@@ -81,6 +87,10 @@ final class LiftTrailingBr implements Rule
         }
 
         $grandparent = $parent->parentNode;
+        // An element below body always has a parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
+        // @pest-mutate-ignore: FalseToTrue
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $grandparent instanceof \DOMNode) {
             return false;
         }

@@ -47,6 +47,9 @@ final class ConvertYoutubeEmbedToUrl implements Rule
 
         $candidates = [];
         foreach (XpathNodes::query($xpath, '//embed[@src]') as $embed) {
+            // The guard only narrows the type: //embed[@src] yields only elements, so the branch is unreachable.
+            // @pest-mutate-ignore: ContinueToBreak
+            // @pest-mutate-ignore: InstanceOfToTrue
             if (! $embed instanceof DOMElement) {
                 continue;
             }
@@ -76,11 +79,17 @@ final class ConvertYoutubeEmbedToUrl implements Rule
     private function convert(DOMElement $embed, string $videoId): void
     {
         $parent = $embed->parentNode;
+        // An embed selected from the document always has a parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $parent instanceof DOMNode) {
             return;
         }
 
         $document = $embed->ownerDocument;
+        // An element in a loaded document always has an owner document, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $document instanceof DOMDocument) {
             return;
         }

@@ -40,3 +40,14 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
 
     expect($actualAfter)->toBe($expectedAfter);
 })->with('fixturePairs');
+
+test('a non-youtube embed does not stop later youtube embeds from converting', function () {
+    $document = new DOMDocument;
+    $document->loadHTML('<html><body><embed src="http://example.com/a.swf"><embed src="http://www.youtube.com/v/abc123"></body></html>');
+
+    (new ConvertYoutubeEmbedToUrl)->apply($document);
+
+    $body = $document->getElementsByTagName('body')->item(0);
+    expect($body?->textContent)->toBe("\nhttps://www.youtube.com/watch?v=abc123\n")
+        ->and($document->getElementsByTagName('embed')->length)->toBe(1);
+});
