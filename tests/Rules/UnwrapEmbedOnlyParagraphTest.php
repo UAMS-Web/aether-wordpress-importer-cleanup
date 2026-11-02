@@ -60,7 +60,7 @@ function unwrapEmbedOnlyParagraphBody(array $children, string $embedName = 'embe
     $paragraph = $document->createElement('p');
     $body->appendChild($paragraph);
     foreach ($children as $item) {
-        $child = (string) $item;
+        $child = is_string($item) ? $item : '';
         if ($child === 'comment') {
             $paragraph->appendChild($document->createComment('c'));
         } elseif ($child === 'embed') {
