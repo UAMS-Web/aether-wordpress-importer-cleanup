@@ -46,7 +46,7 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  * afterward as node names (`#text:<value>` for text). The DOM is built by hand because libxml versions disagree
  * on whether a parsed `<embed>` is void.
  *
- * @param  list<string>  $children  Each `embed`, `br`, `b` or `comment` becomes that node, anything else becomes a text node.
+ * @param  array<mixed>  $children  Each `embed`, `br`, `b` or `comment` becomes that node, anything else becomes a text node.
  * @param  string  $embedName  The node name given to embed children.
  * @return list<string>
  */
@@ -59,13 +59,17 @@ function unwrapEmbedOnlyParagraphBody(array $children, string $embedName = 'embe
 
     $paragraph = $document->createElement('p');
     $body->appendChild($paragraph);
-    foreach ($children as $child) {
-        $paragraph->appendChild(match ($child) {
-            'embed' => $document->createElement($embedName),
-            'br', 'b' => $document->createElement($child),
-            'comment' => $document->createComment('c'),
-            default => $document->createTextNode($child),
-        });
+    foreach ($children as $item) {
+        $child = (string) $item;
+        if ($child === 'comment') {
+            $paragraph->appendChild($document->createComment('c'));
+        } elseif ($child === 'embed') {
+            $paragraph->appendChild($document->createElement($embedName));
+        } elseif ($child === 'br' || $child === 'b') {
+            $paragraph->appendChild($document->createElement($child));
+        } else {
+            $paragraph->appendChild($document->createTextNode($child));
+        }
     }
 
     $body->appendChild($document->createElement('p', 'after'));
@@ -108,9 +112,10 @@ test('unwrap embed only paragraph matches the embed name regardless of case', fu
 
 test('unwrap embed only paragraph ignores a document without paragraphs', function () {
     $document = new DOMDocument('1.0', 'UTF-8');
-    $document->appendChild($document->createElement('body'));
+    $body = $document->createElement('body');
+    $document->appendChild($body);
 
     (new UnwrapEmbedOnlyParagraph)->apply($document);
 
-    expect($document->getElementsByTagName('body')->item(0)->childNodes->length)->toBe(0);
+    expect($body->childNodes->length)->toBe(0);
 });
