@@ -23,23 +23,23 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class ReplaceCurlyQuotes implements Rule
 {
-    private const array REPLACEMENTS = [
-        "\u{201D}" => '"',
-        "\u{201C}" => '"',
-        "\u{2019}" => "'",
-        "\u{2018}" => "'",
-    ];
-
     public function apply(DOMDocument $document): void
     {
         $xpath = new DOMXPath($document);
 
         foreach (XpathNodes::query($xpath, '//text()') as $textNode) {
+            // //text() yields only text nodes, so the guard only narrows the type and the continue is unreachable.
+            // @pest-mutate-ignore: ContinueToBreak
             if (! $textNode instanceof DOMText) {
                 continue;
             }
 
-            $textNode->nodeValue = strtr($textNode->nodeValue ?? '', self::REPLACEMENTS);
+            $textNode->nodeValue = strtr($textNode->nodeValue ?? '', [
+                "\u{201D}" => '"',
+                "\u{201C}" => '"',
+                "\u{2019}" => "'",
+                "\u{2018}" => "'",
+            ]);
         }
     }
 }
