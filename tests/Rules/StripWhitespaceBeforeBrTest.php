@@ -52,7 +52,7 @@ function stripWhitespaceBeforeBrBody(string $html): string
     (new StripWhitespaceBeforeBr)->apply($document);
 
     $out = '';
-    foreach ($document->getElementsByTagName('body')->item(0)?->childNodes ?? [] as $child) {
+    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
         $out .= $document->saveHTML($child);
     }
 

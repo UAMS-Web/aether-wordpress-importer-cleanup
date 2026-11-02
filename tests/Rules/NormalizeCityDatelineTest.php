@@ -52,7 +52,7 @@ function normalizeCityDatelineBody(string $html): string
     (new NormalizeCityDateline)->apply($document);
 
     $out = '';
-    foreach ($document->getElementsByTagName('body')->item(0)?->childNodes ?? [] as $child) {
+    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
         $out .= $document->saveHTML($child);
     }
 
@@ -138,7 +138,9 @@ test('normalize city dateline matches only the cities it is given', function () 
 });
 
 test('normalize city dateline ignores a document without a body', function () {
-    (new NormalizeCityDateline)->apply(new DOMDocument);
+    $document = new DOMDocument;
 
-    expect(true)->toBeTrue();
+    (new NormalizeCityDateline)->apply($document);
+
+    expect($document->documentElement)->toBeNull();
 });

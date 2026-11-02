@@ -52,7 +52,7 @@ function stripLeadingDateLineBody(string $html): string
     (new StripLeadingDateLine)->apply($document);
 
     $out = '';
-    foreach ($document->getElementsByTagName('body')->item(0)?->childNodes ?? [] as $child) {
+    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
         $out .= $document->saveHTML($child);
     }
 
@@ -119,7 +119,9 @@ test('strip leading date line leaves other markup alone', function (string $html
 ]);
 
 test('strip leading date line ignores a document without a body', function () {
-    (new StripLeadingDateLine)->apply(new DOMDocument);
+    $document = new DOMDocument;
 
-    expect(true)->toBeTrue();
+    (new StripLeadingDateLine)->apply($document);
+
+    expect($document->documentElement)->toBeNull();
 });

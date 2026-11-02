@@ -54,7 +54,7 @@ function stripOfficeNamespaceTagsBody(string $html): string
     (new StripOfficeNamespaceTags)->apply($document);
 
     $out = '';
-    foreach ($document->getElementsByTagName('body')->item(0)?->childNodes ?? [] as $child) {
+    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
         $out .= $document->saveHTML($child);
     }
 
