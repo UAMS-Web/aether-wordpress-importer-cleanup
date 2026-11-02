@@ -190,6 +190,8 @@ final class CaptionizeImageCutline implements Rule
     private function tryCaptionizeAlignedParagraph(DOMElement $p): void
     {
         $align = $this->paragraphAlignment($p);
+        // Callers pass only paragraphs that already have an alignment, so this guard only narrows the type.
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if ($align === null) {
             return;
         }
@@ -236,6 +238,8 @@ final class CaptionizeImageCutline implements Rule
             return;
         }
 
+        // Text is collected only after the image is found, so a missing image leaves the text empty and the next check returns.
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $img instanceof DOMElement) {
             return;
         }
@@ -246,6 +250,8 @@ final class CaptionizeImageCutline implements Rule
         }
 
         $parent = $p->parentNode;
+        // A paragraph taken from the document always has a parent. Only a loaded document is processed, so the guard only narrows the type.
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $parent instanceof DOMNode) {
             return;
         }
@@ -351,6 +357,8 @@ final class CaptionizeImageCutline implements Rule
             return;
         }
 
+        // The break is found before any text is collected, so a missing image or break leaves the text empty and the next check returns.
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $img instanceof DOMElement || ! $br instanceof DOMElement) {
             return;
         }
@@ -398,6 +406,8 @@ final class CaptionizeImageCutline implements Rule
                 continue;
             }
 
+            // A non-element node has a name that matches no tag below, so the final return handles it with or without this one.
+            // @pest-mutate-ignore: RemoveEarlyReturn
             if (! $child instanceof DOMElement) {
                 return;
             }
@@ -433,11 +443,16 @@ final class CaptionizeImageCutline implements Rule
         }
 
         $parent = $cutline->parentNode;
+        // A cutline taken from the document always has a parent. Only a loaded document is processed, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $parent instanceof DOMNode) {
             return;
         }
 
         $document = $cutline->ownerDocument;
+        // Only a loaded document is processed, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
         if (! $document instanceof DOMDocument) {
             return;
         }
@@ -475,6 +490,8 @@ final class CaptionizeImageCutline implements Rule
                 continue;
             }
 
+            // A non-element node has a name that matches no tag below, so the final return handles it with or without this one.
+            // @pest-mutate-ignore: RemoveEarlyReturn
             if (! $child instanceof DOMElement) {
                 return;
             }
@@ -504,6 +521,8 @@ final class CaptionizeImageCutline implements Rule
         }
 
         $parent = $div->parentNode;
+        // A div taken from the document always has a parent. Only a loaded document is processed, so the guard only narrows the type.
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $parent instanceof DOMNode) {
             return;
         }
@@ -546,6 +565,8 @@ final class CaptionizeImageCutline implements Rule
         // cutline is reachable from the wrapping <p>'s siblings. Lift the
         // img out of its wrapping <p> first.
         $wrapper = $img->parentNode;
+        // An image in a loaded HTML document always sits below an element, so the guard only narrows the type.
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $wrapper instanceof DOMElement) {
             return;
         }
@@ -729,6 +750,9 @@ final class CaptionizeImageCutline implements Rule
     private function hasClassToken(string $classAttr, string $token): bool
     {
         $tokens = preg_split('/\s+/', mb_trim($classAttr));
+        // preg_split fails only on an invalid pattern or a backtracking limit, neither of which this fixed pattern can reach.
+        // @pest-mutate-ignore: FalseToTrue
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if ($tokens === false) {
             return false;
         }
@@ -739,6 +763,8 @@ final class CaptionizeImageCutline implements Rule
     private function convertToCaption(DOMElement $img, DOMElement $cutline): void
     {
         $parent = $img->parentNode;
+        // An image taken from the document always has a parent. Only a loaded document is processed, so the guard only narrows the type.
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $parent instanceof DOMNode) {
             return;
         }
