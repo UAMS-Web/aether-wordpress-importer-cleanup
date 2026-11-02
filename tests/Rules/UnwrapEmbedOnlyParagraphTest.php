@@ -40,3 +40,77 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
 
     expect($actualAfter)->toBe($expectedAfter);
 })->with('fixturePairs');
+
+/**
+ * Builds a `<body>` holding one `<p>` from a list of children, applies the rule, and lists what the body holds
+ * afterward as node names (`#text:<value>` for text). The DOM is built by hand because libxml versions disagree
+ * on whether a parsed `<embed>` is void.
+ *
+ * @param  list<string>  $children  Each `embed`, `br`, `b` or `comment` becomes that node, anything else becomes a text node.
+ * @param  string  $embedName  The node name given to embed children.
+ * @return list<string>
+ */
+function unwrapEmbedOnlyParagraphBody(array $children, string $embedName = 'embed'): array
+{
+    $document = new DOMDocument('1.0', 'UTF-8');
+    $body = $document->createElement('body');
+    $document->appendChild($body);
+    $body->appendChild($document->createElement('p', 'before'));
+
+    $paragraph = $document->createElement('p');
+    $body->appendChild($paragraph);
+    foreach ($children as $child) {
+        $paragraph->appendChild(match ($child) {
+            'embed' => $document->createElement($embedName),
+            'br', 'b' => $document->createElement($child),
+            'comment' => $document->createComment('c'),
+            default => $document->createTextNode($child),
+        });
+    }
+
+    $body->appendChild($document->createElement('p', 'after'));
+
+    (new UnwrapEmbedOnlyParagraph)->apply($document);
+
+    $names = [];
+    foreach ($body->childNodes as $node) {
+        $names[] = $node instanceof DOMText ? '#text:'.json_encode($node->nodeValue) : $node->nodeName;
+    }
+
+    return $names;
+}
+
+test('unwrap embed only paragraph replaces a qualifying paragraph with its embeds', function (array $children, array $expected) {
+    expect(unwrapEmbedOnlyParagraphBody($children))->toBe(['p', ...$expected, 'p']);
+})->with([
+    'one embed' => [['embed'], ['#text:"\n"', 'embed', '#text:"\n"']],
+    'embed and whitespace' => [[" \n", 'embed', ' '], ['#text:"\n"', 'embed', '#text:"\n"']],
+    'embed and br' => [['embed', 'br'], ['#text:"\n"', 'embed', '#text:"\n"']],
+    'br first' => [['br', 'embed'], ['#text:"\n"', 'embed', '#text:"\n"']],
+    'two embeds' => [['embed', 'embed'], ['#text:"\n"', 'embed', '#text:"\n"', '#text:"\n"', 'embed', '#text:"\n"']],
+    'two embeds with whitespace' => [['embed', ' ', 'embed'], ['#text:"\n"', 'embed', '#text:"\n"', '#text:"\n"', 'embed', '#text:"\n"']],
+]);
+
+test('unwrap embed only paragraph leaves other paragraphs alone', function (array $children) {
+    expect(unwrapEmbedOnlyParagraphBody($children))->toBe(['p', 'p', 'p']);
+})->with([
+    'no children' => [[]],
+    'only whitespace' => [[' ']],
+    'only br' => [['br']],
+    'text and embed' => [['x', 'embed']],
+    'element and embed' => [['b', 'embed']],
+    'comment and embed' => [['comment', 'embed']],
+]);
+
+test('unwrap embed only paragraph matches the embed name regardless of case', function () {
+    expect(unwrapEmbedOnlyParagraphBody(['embed'], 'EMBED'))->toBe(['p', '#text:"\n"', 'EMBED', '#text:"\n"', 'p']);
+});
+
+test('unwrap embed only paragraph ignores a document without paragraphs', function () {
+    $document = new DOMDocument('1.0', 'UTF-8');
+    $document->appendChild($document->createElement('body'));
+
+    (new UnwrapEmbedOnlyParagraph)->apply($document);
+
+    expect($document->getElementsByTagName('body')->item(0)->childNodes->length)->toBe(0);
+});

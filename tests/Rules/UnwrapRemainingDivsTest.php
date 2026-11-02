@@ -45,3 +45,39 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
 
     expect($actualAfter)->toBe($expectedAfter);
 })->with('fixturePairs');
+
+/**
+ * @return string the serialized contents of the body of `$html` after the rule has run
+ */
+function unwrapRemainingDivsBody(string $html): string
+{
+    $document = new DOMDocument('1.0', 'UTF-8');
+    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+
+    (new UnwrapRemainingDivs)->apply($document);
+
+    $out = '';
+    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
+        $out .= $document->saveHTML($child);
+    }
+
+    return $out;
+}
+
+test('unwrap remaining divs rewrites matching markup', function (string $html, string $expected) {
+    expect(unwrapRemainingDivsBody($html))->toBe($expected);
+})->with([
+    'bare div' => ['<div>a</div>', "\n\na\n\n"],
+    'class div' => ['<div class="c">a</div>', "\n\na\n\n"],
+    'nested' => ['<div><div>a</div>b</div>', "\n\n\n\na\n\nb\n\n"],
+    'with markup' => ['<div><b>a</b> c</div>', "\n\n<b>a</b> c\n\n"],
+    'between paragraphs' => ['<p>x</p><div>a</div><p>y</p>', "<p>x</p>\n\na\n\n<p>y</p>"],
+    'empty div' => ['<div></div>', "\n\n\n\n"],
+    'two divs' => ['<div>a</div><div>b</div>', "\n\na\n\n\n\nb\n\n"],
+]);
+
+test('unwrap remaining divs leaves other markup alone', function (string $html) {
+    expect(unwrapRemainingDivsBody($html))->toBe($html);
+})->with([
+    'no div' => ['<p>a</p>'],
+]);

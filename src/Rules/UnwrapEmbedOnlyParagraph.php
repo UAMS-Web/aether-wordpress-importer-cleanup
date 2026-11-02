@@ -86,17 +86,26 @@ final class UnwrapEmbedOnlyParagraph implements Rule
     private function unwrap(DOMElement $p): void
     {
         $parent = $p->parentNode;
+        // A p found by XPath always has a parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $parent instanceof DOMNode) {
             return;
         }
 
         $document = $p->ownerDocument;
+        // An element in a document always has an owner document, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
         if (! $document instanceof DOMDocument) {
             return;
         }
 
         $embeds = [];
         foreach ($p->childNodes as $child) {
+            // Every element child of a qualifying paragraph is an embed or a br, and a text child never has the node name
+            // embed, so the type check is redundant; libxml lowercases HTML node names, so strtolower changes nothing.
+            // @pest-mutate-ignore: InstanceOfToTrue
+            // @pest-mutate-ignore: UnwrapStrtolower
             if ($child instanceof DOMElement && strtolower($child->nodeName) === 'embed') {
                 $embeds[] = $child;
             }

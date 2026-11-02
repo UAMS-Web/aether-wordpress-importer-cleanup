@@ -59,6 +59,8 @@ final class UnwrapCaptionOnlyParagraph implements Rule
 
         $paragraphs = [];
         foreach (XpathNodes::query($xpath, '//p') as $p) {
+            // //p yields only elements, so the type check only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($p instanceof DOMElement && $this->isCaptionOnlyParagraph($p)) {
                 $paragraphs[] = $p;
             }
@@ -93,11 +95,16 @@ final class UnwrapCaptionOnlyParagraph implements Rule
     private function unwrapElement(DOMElement $element): void
     {
         $parent = $element->parentNode;
+        // A p found by XPath always has a parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $parent instanceof DOMNode) {
             return;
         }
 
         $document = $element->ownerDocument;
+        // An element in a document always has an owner document, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
         if (! $document instanceof DOMDocument) {
             return;
         }
