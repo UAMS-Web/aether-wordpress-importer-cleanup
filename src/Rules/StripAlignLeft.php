@@ -31,6 +31,8 @@ final class StripAlignLeft implements Rule
 
         $elements = [];
         foreach (XpathNodes::query($xpath, $query) as $element) {
+            // The query selects only elements, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($element instanceof DOMElement) {
                 $elements[] = $element;
             }

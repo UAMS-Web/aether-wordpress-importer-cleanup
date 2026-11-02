@@ -30,6 +30,8 @@ final class StripHtmlComments implements Rule
 
         $comments = [];
         foreach (XpathNodes::query($xpath, '//comment()') as $comment) {
+            // //comment() yields only comment nodes, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($comment instanceof DOMComment) {
                 $comments[] = $comment;
             }
@@ -37,6 +39,8 @@ final class StripHtmlComments implements Rule
 
         foreach ($comments as $comment) {
             $parent = $comment->parentNode;
+            // A comment found by XPath always has a parent, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($parent instanceof DOMNode) {
                 $parent->removeChild($comment);
             }
