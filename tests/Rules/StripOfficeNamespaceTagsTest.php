@@ -42,38 +42,58 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
 })->with('fixturePairs');
 
 /**
- * @return string the serialized contents of the body of `$html` after the rule has run
+ * Builds `<p>a{children}b</p>` by hand: prefixed tag names are dropped by some libxml builds when parsed, but
+ * createElement() keeps them on every platform, which is what the rule has to handle.
+ *
+ * @param  list<string>  $tagNames  Element names appended to the paragraph, in order, each holding the text `x`.
+ * @param  bool  $nested  Whether each element after the first is nested inside the one before it.
  */
-function stripOfficeNamespaceTagsBody(string $html): string
+function stripOfficeNamespaceTagsParagraph(array $tagNames, bool $nested = false): string
 {
     $document = new DOMDocument('1.0', 'UTF-8');
-    $previous = libxml_use_internal_errors(true);
-    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-    libxml_use_internal_errors($previous);
+    $paragraph = $document->createElement('p');
+    $document->appendChild($paragraph);
+    $paragraph->appendChild($document->createTextNode('a'));
+
+    $container = $paragraph;
+    foreach ($tagNames as $tagName) {
+        $element = $document->createElement($tagName, 'x');
+        $container->appendChild($element);
+        if ($nested) {
+            $container = $element;
+        }
+    }
+
+    $paragraph->appendChild($document->createTextNode('b'));
 
     (new StripOfficeNamespaceTags)->apply($document);
 
-    $out = '';
-    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
-        $out .= $document->saveHTML($child);
-    }
-
-    return $out;
+    return (string) $document->saveHTML($paragraph);
 }
 
-test('strip office namespace tags rewrites matching markup', function (string $html, string $expected) {
-    expect(stripOfficeNamespaceTagsBody($html))->toBe($expected);
+test('strip office namespace tags removes prefixed elements', function (string $tagName) {
+    expect(stripOfficeNamespaceTagsParagraph([$tagName]))->toBe('<p>ab</p>');
 })->with([
-    'o p' => ['<p>a<o:p>x</o:p>b</p>', '<p>ab</p>'],
-    'v shape nested' => ['<p>a<v:shape><v:path>y</v:path></v:shape>b</p>', '<p>ab</p>'],
-    'upper case' => ['<p>a<V:Shape>z</V:Shape><O:P>q</O:P>b</p>', '<p>ab</p>'],
-    'o lock' => ['<p>a<o:lock>1</o:lock>b</p>', '<p>ab</p>'],
-    'v inside o' => ['<div><o:p><v:f>1</v:f></o:p><p>t</p></div>', '<div><p>t</p></div>'],
+    'o:p' => ['o:p'],
+    'o:lock' => ['o:lock'],
+    'v:shape' => ['v:shape'],
+    'v:path' => ['v:path'],
+    'upper case V' => ['V:Shape'],
+    'upper case O' => ['O:P'],
 ]);
 
-test('strip office namespace tags leaves other markup alone', function (string $html) {
-    expect(stripOfficeNamespaceTagsBody($html))->toBe($html);
+test('strip office namespace tags removes a whole subtree', function () {
+    expect(stripOfficeNamespaceTagsParagraph(['v:shape', 'v:path'], nested: true))->toBe('<p>ab</p>');
+});
+
+test('strip office namespace tags removes every prefixed element in a paragraph', function () {
+    expect(stripOfficeNamespaceTagsParagraph(['o:p', 'v:shape', 'b']))->toBe('<p>a<b>x</b>b</p>');
+});
+
+test('strip office namespace tags leaves other elements alone', function (string $tagName) {
+    expect(stripOfficeNamespaceTagsParagraph([$tagName]))->toBe("<p>a<{$tagName}>x</{$tagName}>b</p>");
 })->with([
-    'other prefix' => ['<p>a<w:span>keep</w:span>b</p>'],
-    'plain' => ['<p>a<b>keep</b>b</p>'],
+    'other prefix' => ['w:span'],
+    'unprefixed' => ['b'],
+    'prefix inside the name' => ['xo:p'],
 ]);
