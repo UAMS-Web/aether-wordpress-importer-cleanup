@@ -57,6 +57,8 @@ final class UnwrapSingleCellTable implements Rule
 
         $tables = [];
         foreach (XpathNodes::query($xpath, '//table') as $table) {
+            // //table yields only elements, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($table instanceof DOMElement) {
                 $tables[] = $table;
             }
@@ -127,17 +129,19 @@ final class UnwrapSingleCellTable implements Rule
 
     /**
      * Return every direct child element of `$parent` whose tag name
-     * matches `$tagName` (case-insensitive).
+     * matches `$tagName`, a lowercase tag name (the element's own name is
+     * compared case-insensitively).
      *
      * @return list<DOMElement>
      */
     private function childElementsByTag(DOMElement $parent, string $tagName): array
     {
-        $needle = strtolower($tagName);
         $result = [];
 
         foreach ($parent->childNodes as $child) {
-            if ($child instanceof DOMElement && strtolower($child->nodeName) === $needle) {
+            // A non-element node is named #text, #comment or similar and never equals a tag name, so the type check is redundant.
+            // @pest-mutate-ignore: InstanceOfToTrue
+            if ($child instanceof DOMElement && strtolower($child->nodeName) === $tagName) {
                 $result[] = $child;
             }
         }
@@ -153,11 +157,16 @@ final class UnwrapSingleCellTable implements Rule
     private function unwrapWithBlankLines(DOMElement $element): void
     {
         $parent = $element->parentNode;
+        // An element in the unwrapped chain always has a parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $parent instanceof DOMNode) {
             return;
         }
 
         $document = $element->ownerDocument;
+        // An element in a document always has an owner document, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
         if (! $document instanceof DOMDocument) {
             return;
         }
