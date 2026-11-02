@@ -40,3 +40,40 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
 
     expect($actualAfter)->toBe($expectedAfter);
 })->with('fixturePairs');
+
+/**
+ * @return string the serialized contents of the body of `$html` after the rule has run
+ */
+function trimLineEdgesBody(string $html): string
+{
+    $document = new DOMDocument('1.0', 'UTF-8');
+    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+
+    (new TrimLineEdges)->apply($document);
+
+    $out = '';
+    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
+        $out .= $document->saveHTML($child);
+    }
+
+    return $out;
+}
+
+test('trim line edges rewrites matching markup', function (string $html, string $expected) {
+    expect(trimLineEdgesBody($html))->toBe($expected);
+})->with([
+    'trailing ws before newline' => ["<p>a  \nb</p>", "<p>a\nb</p>"],
+    'leading ws after newline' => ["<p>a\n  b</p>", "<p>a\nb</p>"],
+    'tabs' => ["<p>a\t\nb</p>", "<p>a\nb</p>"],
+    'nbsp' => ["<p>a\u{a0}\nb</p>", "<p>a\nb</p>"],
+    'nbsp after' => ["<p>a\n\u{a0}b</p>", "<p>a\nb</p>"],
+    'adjacent text merged' => ["<p>a<!-- c -->  \nb</p>", "<p>a<!-- c -->\nb</p>"],
+    'span siblings' => ["<p>x:\n\n<b>y</b>  \nz</p>", "<p>x:\n\n<b>y</b>\nz</p>"],
+]);
+
+test('trim line edges leaves other markup alone', function (string $html) {
+    expect(trimLineEdgesBody($html))->toBe($html);
+})->with([
+    'no newline kept' => ['<p>a  b</p>'],
+    'plain' => ['<p>a</p>'],
+]);

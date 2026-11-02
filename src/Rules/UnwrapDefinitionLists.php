@@ -50,6 +50,8 @@ final class UnwrapDefinitionLists implements Rule
 
         $elements = [];
         foreach (XpathNodes::query($xpath, '//dl|//dt|//dd') as $element) {
+            // The query selects only elements, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($element instanceof DOMElement) {
                 $elements[] = $element;
             }
@@ -63,11 +65,16 @@ final class UnwrapDefinitionLists implements Rule
     private function unwrapWithBlankLines(DOMElement $element): void
     {
         $parent = $element->parentNode;
+        // A dl, dt or dd found by XPath always has a parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $parent instanceof DOMNode) {
             return;
         }
 
         $document = $element->ownerDocument;
+        // An element in a document always has an owner document, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
         if (! $document instanceof DOMDocument) {
             return;
         }

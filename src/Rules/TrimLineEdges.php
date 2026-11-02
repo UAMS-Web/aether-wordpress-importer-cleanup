@@ -42,6 +42,8 @@ final class TrimLineEdges implements Rule
         $xpath = new DOMXPath($document);
 
         foreach (XpathNodes::query($xpath, '//text()') as $textNode) {
+            // //text() yields only text nodes, so the guard only narrows the type and the continue is unreachable.
+            // @pest-mutate-ignore: ContinueToBreak
             if (! $textNode instanceof DOMText) {
                 continue;
             }

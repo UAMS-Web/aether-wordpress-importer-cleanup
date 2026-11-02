@@ -49,6 +49,8 @@ final class UnwrapRemainingDivs implements Rule
 
         $divs = [];
         foreach (XpathNodes::query($xpath, '//div') as $div) {
+            // //div yields only elements, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($div instanceof DOMElement) {
                 $divs[] = $div;
             }
@@ -62,11 +64,16 @@ final class UnwrapRemainingDivs implements Rule
     private function unwrapWithBlankLines(DOMElement $div): void
     {
         $parent = $div->parentNode;
+        // A div found by XPath always has a parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $parent instanceof DOMNode) {
             return;
         }
 
         $document = $div->ownerDocument;
+        // An element in a document always has an owner document, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
         if (! $document instanceof DOMDocument) {
             return;
         }

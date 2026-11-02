@@ -36,6 +36,8 @@ final class UnwrapSpans implements Rule
 
         foreach ($spans as $span) {
             $parent = $span->parentNode;
+            // A span found by XPath always has a parent, so the guard only narrows the type and the continue is unreachable.
+            // @pest-mutate-ignore: ContinueToBreak
             if (! $parent instanceof \DOMNode) {
                 continue;
             }

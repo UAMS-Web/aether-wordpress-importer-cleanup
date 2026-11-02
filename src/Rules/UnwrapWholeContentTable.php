@@ -42,7 +42,13 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
  */
 final class UnwrapWholeContentTable implements Rule
 {
-    private const array TABLE_STRUCTURE_TAGS = ['tbody', 'tr', 'td'];
+    /**
+     * @return list<string>
+     */
+    private static function tableStructureTags(): array
+    {
+        return ['tbody', 'tr', 'td'];
+    }
 
     public function apply(DOMDocument $document): void
     {
@@ -121,7 +127,7 @@ final class UnwrapWholeContentTable implements Rule
                 continue;
             }
 
-            if (in_array($tag, self::TABLE_STRUCTURE_TAGS, true)) {
+            if (in_array($tag, self::tableStructureTags(), true)) {
                 $collected[] = $child;
             }
 
@@ -132,11 +138,16 @@ final class UnwrapWholeContentTable implements Rule
     private function unwrapWithBlankLines(DOMElement $element): void
     {
         $parent = $element->parentNode;
+        // An element collected from the body always has a parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $parent instanceof DOMNode) {
             return;
         }
 
         $document = $element->ownerDocument;
+        // An element in a document always has an owner document, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
         if (! $document instanceof DOMDocument) {
             return;
         }

@@ -56,7 +56,13 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class UnwrapTableWrappers implements Rule
 {
-    private const array WRAPPER_TAGS = ['p', 'strong', 'em'];
+    /**
+     * @return list<string>
+     */
+    private static function wrapperTags(): array
+    {
+        return ['p', 'strong', 'em'];
+    }
 
     public function apply(DOMDocument $document): void
     {
@@ -64,6 +70,8 @@ final class UnwrapTableWrappers implements Rule
 
         $tables = [];
         foreach (XpathNodes::query($xpath, '//table') as $table) {
+            // //table yields only elements, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($table instanceof DOMElement) {
                 $tables[] = $table;
             }
@@ -97,34 +105,37 @@ final class UnwrapTableWrappers implements Rule
 
     private function isWrapper(DOMElement $element): bool
     {
-        return in_array(strtolower($element->nodeName), self::WRAPPER_TAGS, true);
+        return in_array(strtolower($element->nodeName), self::wrapperTags(), true);
     }
 
     private function padAroundTable(DOMElement $table): void
     {
         $parent = $table->parentNode;
+        // A table found by XPath always has a parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $parent instanceof DOMNode) {
             return;
         }
 
         $document = $table->ownerDocument;
+        // An element in a document always has an owner document, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
         if (! $document instanceof DOMDocument) {
             return;
         }
 
         $parent->insertBefore($document->createTextNode("\n\n"), $table);
 
-        $afterAnchor = $table->nextSibling;
-        if ($afterAnchor instanceof DOMNode) {
-            $parent->insertBefore($document->createTextNode("\n\n"), $afterAnchor);
-        } else {
-            $parent->appendChild($document->createTextNode("\n\n"));
-        }
+        // A null reference node appends, which is what a table with no next sibling needs.
+        $parent->insertBefore($document->createTextNode("\n\n"), $table->nextSibling);
     }
 
     private function unwrapElement(DOMElement $element): void
     {
         $parent = $element->parentNode;
+        // A wrapper collected while walking up from a table always has a parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
         if (! $parent instanceof DOMNode) {
             return;
         }

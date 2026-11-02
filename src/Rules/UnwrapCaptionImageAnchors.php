@@ -74,6 +74,8 @@ final class UnwrapCaptionImageAnchors implements Rule
             return;
         }
 
+        // A comment or other non-element node never has the name a, so the type check is redundant.
+        // @pest-mutate-ignore: InstanceOfToTrue
         if ($node instanceof DOMElement
             && strtolower($node->nodeName) === 'a'
             && $inCaption
@@ -96,9 +98,9 @@ final class UnwrapCaptionImageAnchors implements Rule
     private function updateCaptionState(string $text, bool &$inCaption): void
     {
         $pos = 0;
-        $len = strlen($text);
 
-        while ($pos < $len) {
+        // Each pass moves $pos past a marker, and a pass that finds neither marker returns, so the loop ends on its own.
+        while (true) {
             $openerAt = strpos($text, '[caption', $pos);
             $closerAt = strpos($text, '[/caption]', $pos);
 
@@ -109,6 +111,8 @@ final class UnwrapCaptionImageAnchors implements Rule
                 return;
             }
 
+            // The two markers cannot start at the same offset, so the comparison never sees equal positions.
+            // @pest-mutate-ignore: SmallerToSmallerOrEqual
             if ($nextOpener && (! $nextCloser || $openerAt < $closerAt)) {
                 $inCaption = true;
                 $pos = $openerAt + strlen('[caption');
@@ -154,6 +158,8 @@ final class UnwrapCaptionImageAnchors implements Rule
     private function unwrapAnchor(DOMElement $anchor): void
     {
         $parent = $anchor->parentNode;
+        // An anchor found by walking the tree always has a parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
         if (! $parent instanceof DOMNode) {
             return;
         }

@@ -52,6 +52,8 @@ final class UnwrapSmartTags implements Rule
 
         $elements = [];
         foreach (XpathNodes::query($xpath, $query) as $element) {
+            // The query selects only elements, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($element instanceof DOMElement) {
                 $elements[] = $element;
             }
@@ -66,6 +68,8 @@ final class UnwrapSmartTags implements Rule
     {
         $parent = $element->parentNode;
 
+        // An element found by XPath always has a parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
         if (! $parent instanceof DOMNode) {
             return;
         }

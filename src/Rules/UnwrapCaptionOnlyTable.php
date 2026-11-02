@@ -66,6 +66,8 @@ final class UnwrapCaptionOnlyTable implements Rule
 
         $candidates = [];
         foreach (XpathNodes::query($xpath, '//table') as $table) {
+            // //table yields only elements, so the type check only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($table instanceof DOMElement && $this->qualifies($table)) {
                 $candidates[] = $table;
             }
@@ -78,13 +80,8 @@ final class UnwrapCaptionOnlyTable implements Rule
 
     private function qualifies(DOMElement $table): bool
     {
-        $tds = $table->getElementsByTagName('td');
-        if ($tds->length === 0) {
-            return false;
-        }
-
         $captionCells = 0;
-        foreach ($tds as $td) {
+        foreach ($table->getElementsByTagName('td') as $td) {
             $trimmed = mb_trim($td->textContent);
 
             if ($trimmed === '' && $this->isVisuallyEmpty($td)) {
@@ -114,26 +111,15 @@ final class UnwrapCaptionOnlyTable implements Rule
     }
 
     /**
-     * True iff `$td` has no `<img>`/`<embed>`/other meaningful element
-     * content and no non-whitespace text — i.e. a legacy spacer cell.
+     * True iff `$td` has no element content other than `<br>`. Both callers
+     * have already checked that the cell's text is blank, so text children
+     * are whitespace here and need no check of their own: a legacy spacer
+     * cell.
      */
     private function isVisuallyEmpty(DOMElement $td): bool
     {
         foreach ($td->childNodes as $child) {
-            if ($child instanceof DOMText) {
-                if (mb_trim($child->nodeValue ?? '') === '') {
-                    continue;
-                }
-
-                return false;
-            }
-
-            if ($child instanceof DOMElement) {
-                $tag = strtolower($child->nodeName);
-                if ($tag === 'br') {
-                    continue;
-                }
-
+            if ($child instanceof DOMElement && strtolower($child->nodeName) !== 'br') {
                 return false;
             }
         }
@@ -144,11 +130,16 @@ final class UnwrapCaptionOnlyTable implements Rule
     private function unwrap(DOMElement $table): void
     {
         $parent = $table->parentNode;
+        // A table found by XPath always has a parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $parent instanceof DOMNode) {
             return;
         }
 
         $document = $table->ownerDocument;
+        // An element in a document always has an owner document, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
         if (! $document instanceof DOMDocument) {
             return;
         }

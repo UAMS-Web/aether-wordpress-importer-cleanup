@@ -40,3 +40,39 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
 
     expect($actualAfter)->toBe($expectedAfter);
 })->with('fixturePairs');
+
+/**
+ * @return string the serialized contents of the body of `$html` after the rule has run
+ */
+function unwrapBareDivsBody(string $html): string
+{
+    $document = new DOMDocument('1.0', 'UTF-8');
+    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+
+    (new UnwrapBareDivs)->apply($document);
+
+    $out = '';
+    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
+        $out .= $document->saveHTML($child);
+    }
+
+    return $out;
+}
+
+test('unwrap bare divs rewrites matching markup', function (string $html, string $expected) {
+    expect(unwrapBareDivsBody($html))->toBe($expected);
+})->with([
+    'bare div' => ['<div>a</div>', 'a'],
+    'nested bare' => ['<div><div>a</div>b</div>', 'ab'],
+    'bare in attr' => ['<div class="c"><div>a</div></div>', '<div class="c">a</div>'],
+    'bare mixed children' => ['<div>a<b>b</b>c</div>', 'a<b>b</b>c'],
+    'empty bare' => ['<p>x</p><div></div><p>y</p>', '<p>x</p><p>y</p>'],
+]);
+
+test('unwrap bare divs leaves other markup alone', function (string $html) {
+    expect(unwrapBareDivsBody($html))->toBe($html);
+})->with([
+    'class div kept' => ['<div class="c">a</div>'],
+    'id div kept' => ['<div id="i">a</div>'],
+    'no div' => ['<p>a</p>'],
+]);

@@ -45,3 +45,40 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
 
     expect($actualAfter)->toBe($expectedAfter);
 })->with('fixturePairs');
+
+/**
+ * @return string the serialized contents of the body of `$html` after the rule has run
+ */
+function unwrapDefinitionListsBody(string $html): string
+{
+    $document = new DOMDocument('1.0', 'UTF-8');
+    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+
+    (new UnwrapDefinitionLists)->apply($document);
+
+    $out = '';
+    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
+        $out .= $document->saveHTML($child);
+    }
+
+    return $out;
+}
+
+test('unwrap definition lists rewrites matching markup', function (string $html, string $expected) {
+    expect(unwrapDefinitionListsBody($html))->toBe($expected);
+})->with([
+    'dl' => ['<dl><dt>a</dt><dd>b</dd></dl>', "\n\n\n\na\n\n\n\nb\n\n\n\n"],
+    'dt only' => ['<dt>a</dt>', "\n\na\n\n"],
+    'dd only' => ['<dd>a</dd>', "\n\na\n\n"],
+    'dl only' => ['<dl>a</dl>', "\n\na\n\n"],
+    'nested dl' => ['<dl><dt>a</dt><dd><dl><dt>b</dt></dl></dd></dl>', "\n\n\n\na\n\n\n\n\n\n\n\nb\n\n\n\n\n\n\n\n"],
+    'with markup' => ['<dl><dt><b>a</b></dt><dd>b <i>c</i></dd></dl>', "\n\n\n\n<b>a</b>\n\n\n\nb <i>c</i>\n\n\n\n"],
+    'between paragraphs' => ['<p>x</p><dl><dt>a</dt></dl><p>y</p>', "<p>x</p>\n\n\n\na\n\n\n\n<p>y</p>"],
+    'empty dl' => ['<dl></dl>', "\n\n\n\n"],
+]);
+
+test('unwrap definition lists leaves other markup alone', function (string $html) {
+    expect(unwrapDefinitionListsBody($html))->toBe($html);
+})->with([
+    'no dl' => ['<p>a</p>'],
+]);
