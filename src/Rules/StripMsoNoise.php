@@ -42,6 +42,8 @@ final class StripMsoNoise implements Rule
     private function stripMsoClassTokens(DOMXPath $xpath): void
     {
         foreach (XpathNodes::query($xpath, '//*[@class]') as $element) {
+            // The query selects only elements, so the guard only narrows the type and the continue is unreachable.
+            // @pest-mutate-ignore: ContinueToBreak
             if (! $element instanceof DOMElement) {
                 continue;
             }
@@ -74,6 +76,8 @@ final class StripMsoNoise implements Rule
         // DOMNodeList in-flight.
         $fontElements = [];
         foreach (XpathNodes::query($xpath, '//font') as $element) {
+            // The query selects only elements, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($element instanceof DOMElement) {
                 $fontElements[] = $element;
             }
@@ -81,6 +85,9 @@ final class StripMsoNoise implements Rule
 
         foreach ($fontElements as $font) {
             $parent = $font->parentNode;
+            // A font element found by XPath always has a parent, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
+            // @pest-mutate-ignore: ContinueToBreak
             if (! $parent instanceof \DOMNode) {
                 continue;
             }
