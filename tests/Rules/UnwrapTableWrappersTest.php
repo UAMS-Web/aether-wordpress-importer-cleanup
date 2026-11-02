@@ -52,7 +52,7 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  *
  * A spec is a string (a text node) or a list whose first item is an element name and whose rest are child specs.
  *
- * @param  array<mixed>  $spec
+ * @param  array<int, string|array<mixed>>  $spec
  */
 function unwrapTableWrappersRun(array $spec): string
 {
@@ -69,9 +69,14 @@ function unwrapTableWrappersRun(array $spec): string
  */
 function unwrapTableWrappersBuild(DOMDocument $document, array $spec): DOMElement
 {
-    $element = $document->createElement((string) array_shift($spec));
-    foreach ($spec as $child) {
-        $element->appendChild(is_array($child) ? unwrapTableWrappersBuild($document, $child) : $document->createTextNode((string) $child));
+    $name = $spec[0] ?? '';
+    $element = $document->createElement(is_string($name) ? $name : '');
+    foreach (array_slice($spec, 1) as $child) {
+        if (is_array($child)) {
+            $element->appendChild(unwrapTableWrappersBuild($document, $child));
+        } else {
+            $element->appendChild($document->createTextNode(is_scalar($child) ? (string) $child : ''));
+        }
     }
 
     return $element;
