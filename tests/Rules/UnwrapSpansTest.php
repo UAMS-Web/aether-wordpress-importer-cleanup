@@ -40,3 +40,38 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
 
     expect($actualAfter)->toBe($expectedAfter);
 })->with('fixturePairs');
+
+/**
+ * @return string the serialized contents of the body of `$html` after the rule has run
+ */
+function unwrapSpansBody(string $html): string
+{
+    $document = new DOMDocument('1.0', 'UTF-8');
+    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+
+    (new UnwrapSpans)->apply($document);
+
+    $out = '';
+    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
+        $out .= $document->saveHTML($child);
+    }
+
+    return $out;
+}
+
+test('unwrap spans rewrites matching markup', function (string $html, string $expected) {
+    expect(unwrapSpansBody($html))->toBe($expected);
+})->with([
+    'span' => ['<p>a<span>b</span>c</p>', '<p>abc</p>'],
+    'span attrs' => ['<p><span class="x" style="color:red">b</span></p>', '<p>b</p>'],
+    'nested span' => ['<p><span>a<span>b</span></span></p>', '<p>ab</p>'],
+    'two spans' => ['<p><span>a</span> <span>b</span></p>', '<p>a b</p>'],
+    'empty span' => ['<p>a<span></span>b</p>', '<p>ab</p>'],
+    'span with element' => ['<p><span><b>a</b></span></p>', '<p><b>a</b></p>'],
+]);
+
+test('unwrap spans leaves other markup alone', function (string $html) {
+    expect(unwrapSpansBody($html))->toBe($html);
+})->with([
+    'no span' => ['<p>a</p>'],
+]);

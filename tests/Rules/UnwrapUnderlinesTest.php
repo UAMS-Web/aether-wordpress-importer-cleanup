@@ -40,3 +40,37 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
 
     expect($actualAfter)->toBe($expectedAfter);
 })->with('fixturePairs');
+
+/**
+ * @return string the serialized contents of the body of `$html` after the rule has run
+ */
+function unwrapUnderlinesBody(string $html): string
+{
+    $document = new DOMDocument('1.0', 'UTF-8');
+    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+
+    (new UnwrapUnderlines)->apply($document);
+
+    $out = '';
+    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
+        $out .= $document->saveHTML($child);
+    }
+
+    return $out;
+}
+
+test('unwrap underlines rewrites matching markup', function (string $html, string $expected) {
+    expect(unwrapUnderlinesBody($html))->toBe($expected);
+})->with([
+    'u' => ['<p>a<u>b</u>c</p>', '<p>abc</p>'],
+    'nested u' => ['<p><u>a<u>b</u></u></p>', '<p>ab</p>'],
+    'u with element' => ['<p><u><b>a</b></u></p>', '<p><b>a</b></p>'],
+    'empty u' => ['<p>a<u></u>b</p>', '<p>ab</p>'],
+    'two u' => ['<p><u>a</u> <u>b</u></p>', '<p>a b</p>'],
+]);
+
+test('unwrap underlines leaves other markup alone', function (string $html) {
+    expect(unwrapUnderlinesBody($html))->toBe($html);
+})->with([
+    'no u' => ['<p>a</p>'],
+]);

@@ -38,6 +38,8 @@ final class UnwrapUnderlines implements Rule
     {
         $parent = $element->parentNode;
 
+        // A u element found by tag name always has a parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
         if (! $parent instanceof DOMNode) {
             return;
         }

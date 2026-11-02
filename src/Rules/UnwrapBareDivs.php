@@ -31,6 +31,8 @@ final class UnwrapBareDivs implements Rule
 
         $divs = [];
         foreach (XpathNodes::query($xpath, '//div') as $div) {
+            // //div yields only elements, so the type check only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($div instanceof DOMElement && $div->attributes->length === 0) {
                 $divs[] = $div;
             }
@@ -45,6 +47,8 @@ final class UnwrapBareDivs implements Rule
     {
         $parent = $div->parentNode;
 
+        // A div found by XPath always has a parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
         if (! $parent instanceof \DOMNode) {
             return;
         }

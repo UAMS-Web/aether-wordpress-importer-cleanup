@@ -28,14 +28,20 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class TrimBlockEdges implements Rule
 {
-    private const array BLOCK_TAGS = ['p', 'li', 'td', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+    /**
+     * @return list<string>
+     */
+    private static function blockTags(): array
+    {
+        return ['p', 'li', 'td', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+    }
 
     public function apply(DOMDocument $document): void
     {
         $xpath = new DOMXPath($document);
         $query = implode(
             ' | ',
-            array_map(static fn (string $tag): string => '//'.$tag, self::BLOCK_TAGS),
+            array_map(static fn (string $tag): string => '//'.$tag, self::blockTags()),
         );
 
         $blocks = [];
