@@ -38,16 +38,11 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
  */
 final class MergeAdjacentLists implements Rule
 {
-    // The coverage driver reports no executable line for a constant initializer, so these mutants read as uncovered;
-    // the list-type tests in MergeAdjacentListsTest pin both entries.
-    // @pest-mutate-ignore: RemoveArrayItem
-    private const array LIST_TAGS = ['ul', 'ol'];
-
     public function apply(DOMDocument $document): void
     {
         do {
             $changed = false;
-            foreach (self::LIST_TAGS as $tag) {
+            foreach (['ul', 'ol'] as $tag) {
                 $lists = [];
                 foreach ($document->getElementsByTagName($tag) as $list) {
                     $lists[] = $list;
@@ -81,9 +76,7 @@ final class MergeAdjacentLists implements Rule
     private function nextNonWhitespaceSibling(DOMElement $element): ?DOMNode
     {
         $sibling = $element->nextSibling;
-        // Replacing the test with true only adds an iteration for null, which returns null the same way.
-        // @pest-mutate-ignore: InstanceOfToTrue
-        while ($sibling instanceof DOMNode) {
+        while ($sibling !== null) {
             if ($sibling instanceof DOMText && mb_trim($sibling->nodeValue ?? '') === '') {
                 $sibling = $sibling->nextSibling;
 

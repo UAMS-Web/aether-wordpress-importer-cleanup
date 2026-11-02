@@ -38,11 +38,6 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class LiftTrailingBr implements Rule
 {
-    // The coverage driver reports no executable line for a constant initializer, so these mutants read as uncovered;
-    // the dataset in LiftTrailingBrTest pins every entry.
-    // @pest-mutate-ignore: RemoveArrayItem
-    private const array SKIP_PARENTS = ['body', 'p', 'li', 'td', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
-
     public function apply(DOMDocument $document): void
     {
         $xpath = new DOMXPath($document);
@@ -78,7 +73,7 @@ final class LiftTrailingBr implements Rule
             return false;
         }
 
-        if (in_array($parent->nodeName, self::SKIP_PARENTS, true)) {
+        if (in_array($parent->nodeName, ['body', 'p', 'li', 'td', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'], true)) {
             return false;
         }
 

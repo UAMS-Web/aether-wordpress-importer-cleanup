@@ -59,5 +59,15 @@ test('whitespace after a lifted br is dropped from the old parent', function () 
 
     $bold = $document->getElementsByTagName('b')->item(0);
     expect($bold?->textContent)->toBe('foo')
-        ->and($bold->nextSibling?->nodeName)->toBe('br');
+        ->and($bold?->nextSibling?->nodeName)->toBe('br');
+});
+
+test('a trailing br in the body is not lifted out of it', function () {
+    $document = new DOMDocument;
+    $document->loadHTML('<html><body>x<br></body></html>');
+
+    (new LiftTrailingBr)->apply($document);
+
+    $body = $document->getElementsByTagName('body')->item(0);
+    expect($body?->getElementsByTagName('br')->length)->toBe(1);
 });

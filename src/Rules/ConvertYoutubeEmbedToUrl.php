@@ -89,7 +89,6 @@ final class ConvertYoutubeEmbedToUrl implements Rule
         $document = $embed->ownerDocument;
         // An element in a loaded document always has an owner document, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
-        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $document instanceof DOMDocument) {
             return;
         }

@@ -750,14 +750,10 @@ final class CaptionizeImageCutline implements Rule
     private function hasClassToken(string $classAttr, string $token): bool
     {
         $tokens = preg_split('/\s+/', mb_trim($classAttr));
+
         // preg_split fails only on an invalid pattern or a backtracking limit, neither of which this fixed pattern can reach.
         // @pest-mutate-ignore: FalseToTrue
-        // @pest-mutate-ignore: RemoveEarlyReturn
-        if ($tokens === false) {
-            return false;
-        }
-
-        return in_array($token, $tokens, true);
+        return $tokens !== false && in_array($token, $tokens, true);
     }
 
     private function convertToCaption(DOMElement $img, DOMElement $cutline): void

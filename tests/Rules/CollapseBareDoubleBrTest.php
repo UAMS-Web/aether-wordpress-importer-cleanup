@@ -49,7 +49,7 @@ test('whitespace around a double br run is trimmed and the text nodes are merged
 
     $body = $document->getElementsByTagName('body')->item(0);
     expect($body?->textContent)->toBe("Foo\n\nBar")
-        ->and($body->childNodes->length)->toBe(1);
+        ->and($body?->childNodes->length)->toBe(1);
 });
 
 test('a double br run at the start of the body is replaced', function () {
