@@ -36,36 +36,48 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
  */
 final class NormalizeCityDateline implements Rule
 {
-    private const array DEFAULT_CITIES = [
-        'BATESVILLE',
-        'CLARENDON',
-        'EL DORADO',
-        'FAYETTEVILLE',
-        'FORREST CITY',
-        'FORT SMITH',
-        'GRAVETTE',
-        'HELENA',
-        'JACKSONVILLE',
-        'JONESBORO',
-        'LITTLE ROCK',
-        'MAGNOLIA',
-        'MALVERN',
-        'MARIANNA',
-        'MARVELL',
-        'MOUNTAIN HOME',
-        'PINE BLUFF',
-        'SPRINGDALE',
-        'TEXARKANA',
-        'VAN BUREN',
-        'WARREN',
-    ];
+    /**
+     * @var list<string>
+     */
+    private readonly array $cities;
 
     /**
-     * @param  list<string>  $cities
+     * @param  list<string>|null  $cities  the dateline cities to match; null uses the default Arkansas list
      */
-    public function __construct(
-        private readonly array $cities = self::DEFAULT_CITIES,
-    ) {}
+    public function __construct(?array $cities = null)
+    {
+        $this->cities = $cities ?? self::defaultCities();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function defaultCities(): array
+    {
+        return [
+            'BATESVILLE',
+            'CLARENDON',
+            'EL DORADO',
+            'FAYETTEVILLE',
+            'FORREST CITY',
+            'FORT SMITH',
+            'GRAVETTE',
+            'HELENA',
+            'JACKSONVILLE',
+            'JONESBORO',
+            'LITTLE ROCK',
+            'MAGNOLIA',
+            'MALVERN',
+            'MARIANNA',
+            'MARVELL',
+            'MOUNTAIN HOME',
+            'PINE BLUFF',
+            'SPRINGDALE',
+            'TEXARKANA',
+            'VAN BUREN',
+            'WARREN',
+        ];
+    }
 
     public function apply(DOMDocument $document): void
     {

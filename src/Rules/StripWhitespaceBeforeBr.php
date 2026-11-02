@@ -32,11 +32,14 @@ final class StripWhitespaceBeforeBr implements Rule
         $xpath = new DOMXPath($document);
 
         foreach (XpathNodes::query($xpath, '//br') as $br) {
+            // //br yields only elements, so the guard only narrows the type and the continue is unreachable.
+            // @pest-mutate-ignore: ContinueToBreak
             if (! $br instanceof DOMElement) {
                 continue;
             }
 
             $prev = $br->previousSibling;
+            // A <br> directly after an element must be skipped, and later <br> elements must still be processed.
             if (! $prev instanceof DOMText) {
                 continue;
             }

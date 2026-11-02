@@ -50,6 +50,8 @@ final class ReplaceBareBrWithBlankLine implements Rule
 
         foreach ($brs as $br) {
             $parent = $br->parentNode;
+            // A child of the body always has a parent, so the guard only narrows the type.
+            // @pest-mutate-ignore: ContinueToBreak
             if (! $parent instanceof DOMNode) {
                 continue;
             }

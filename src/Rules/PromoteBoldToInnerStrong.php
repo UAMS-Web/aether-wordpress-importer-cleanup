@@ -60,6 +60,8 @@ final class PromoteBoldToInnerStrong implements Rule
             }
 
             $parent = $bold->parentNode;
+            // A b element found by XPath always has a parent, so the guard only narrows the type.
+            // @pest-mutate-ignore: ContinueToBreak
             if (! $parent instanceof DOMNode) {
                 continue;
             }

@@ -45,35 +45,51 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class RemoveEmptyContainers implements Rule
 {
-    private const array PRESERVE = [
-        'body', 'html', 'head', 'title',
-        'br', 'hr', 'img', 'input', 'embed', 'source', 'track', 'wbr',
-        'col', 'colgroup', 'link', 'meta', 'base', 'param', 'area',
-        'iframe', 'object', 'audio', 'video', 'svg', 'canvas',
-        'button', 'select', 'textarea',
-        'a',
-        'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption',
-    ];
+    /**
+     * @return list<string>
+     */
+    private static function preserved(): array
+    {
+        return [
+            'body', 'html', 'head', 'title',
+            'br', 'hr', 'img', 'input', 'embed', 'source', 'track', 'wbr',
+            'col', 'colgroup', 'link', 'meta', 'base', 'param', 'area',
+            'iframe', 'object', 'audio', 'video', 'svg', 'canvas',
+            'button', 'select', 'textarea',
+            'a',
+            'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption',
+        ];
+    }
 
-    private const array CONTENT_DESCENDANTS = [
-        'img', 'iframe', 'embed', 'object', 'audio', 'video', 'svg',
-        'canvas', 'input', 'button', 'select', 'textarea', 'hr', 'a',
-        'table',
-    ];
+    /**
+     * @return list<string>
+     */
+    private static function contentDescendants(): array
+    {
+        return [
+            'img', 'iframe', 'embed', 'object', 'audio', 'video', 'svg',
+            'canvas', 'input', 'button', 'select', 'textarea', 'hr', 'a',
+            'table',
+        ];
+    }
 
     public function apply(DOMDocument $document): void
     {
+        $preserved = self::preserved();
+
         do {
             $changed = false;
             $xpath = new DOMXPath($document);
 
             $candidates = [];
             foreach (XpathNodes::query($xpath, '//*') as $element) {
+                // //* yields only elements, so the guard only narrows the type and the continue is unreachable.
+                // @pest-mutate-ignore: ContinueToBreak
                 if (! $element instanceof DOMElement) {
                     continue;
                 }
 
-                if (in_array($element->nodeName, self::PRESERVE, true)) {
+                if (in_array($element->nodeName, $preserved, true)) {
                     continue;
                 }
 
@@ -100,6 +116,6 @@ final class RemoveEmptyContainers implements Rule
             return false;
         }
 
-        return array_all(self::CONTENT_DESCENDANTS, fn (string $tag): bool => $element->getElementsByTagName($tag)->length <= 0);
+        return array_all(self::contentDescendants(), fn (string $tag): bool => $element->getElementsByTagName($tag)->length <= 0);
     }
 }

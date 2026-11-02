@@ -35,6 +35,8 @@ final class StripStyleTags implements Rule
 
         $elements = [];
         foreach (XpathNodes::query($xpath, $query) as $element) {
+            // The query selects only elements, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($element instanceof DOMElement) {
                 $elements[] = $element;
             }
@@ -42,6 +44,9 @@ final class StripStyleTags implements Rule
 
         foreach ($elements as $element) {
             $parent = $element->parentNode;
+            // An element found by XPath always has a parent, so the guard only narrows the type and the continue is unreachable.
+            // @pest-mutate-ignore: InstanceOfToTrue
+            // @pest-mutate-ignore: ContinueToBreak
             if (! $parent instanceof DOMNode) {
                 continue;
             }

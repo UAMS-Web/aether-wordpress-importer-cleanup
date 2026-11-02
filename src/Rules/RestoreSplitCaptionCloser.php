@@ -62,6 +62,8 @@ final class RestoreSplitCaptionCloser implements Rule
 
         $candidates = [];
         foreach (XpathNodes::query($xpath, '//p') as $p) {
+            // //p yields only elements, so the guard only narrows the type and the continue is unreachable.
+            // @pest-mutate-ignore: ContinueToBreak
             if (! $p instanceof DOMElement) {
                 continue;
             }
@@ -102,7 +104,10 @@ final class RestoreSplitCaptionCloser implements Rule
     {
         foreach ($p->childNodes as $child) {
             if ($child instanceof DOMText) {
-                $text = $child->nodeValue ?? '';
+                $text = $child->textContent;
+                // Adjacent text nodes merge, so whitespace-only text is never followed by another text node:
+                // the next iteration returns null just as the loop exit would.
+                // @pest-mutate-ignore: ContinueToBreak
                 if (trim($text) === '') {
                     continue;
                 }
@@ -123,10 +128,12 @@ final class RestoreSplitCaptionCloser implements Rule
     private function previousMeaningfulParagraph(DOMElement $p): ?DOMElement
     {
         $prev = $p->previousSibling;
-        while ($prev instanceof DOMText && trim($prev->nodeValue ?? '') === '') {
+        while ($prev instanceof DOMText && trim($prev->textContent) === '') {
             $prev = $prev->previousSibling;
         }
 
+        // The HTML parser lowercases element names, so the fold never changes the comparison.
+        // @pest-mutate-ignore: UnwrapStrtolower
         if ($prev instanceof DOMElement && strtolower($prev->nodeName) === 'p') {
             return $prev;
         }
@@ -137,13 +144,15 @@ final class RestoreSplitCaptionCloser implements Rule
     private function moveCloser(DOMElement $paragraph, DOMText $closerTextNode, DOMElement $previousParagraph): void
     {
         $document = $paragraph->ownerDocument;
+        // A paragraph taken from a loaded document always has an owner document, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
         if (! $document instanceof DOMDocument) {
             return;
         }
 
         // Strip `[/caption]` from the leading text node, preserving
         // any leading whitespace inside the same text node.
-        $text = $closerTextNode->nodeValue ?? '';
+        $text = $closerTextNode->textContent;
         $leadingWhitespaceLength = strlen($text) - strlen(ltrim($text));
         $afterCloser = substr($text, $leadingWhitespaceLength + strlen('[/caption]'));
         $closerTextNode->nodeValue = substr($text, 0, $leadingWhitespaceLength).$afterCloser;

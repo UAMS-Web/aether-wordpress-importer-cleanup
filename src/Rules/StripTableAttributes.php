@@ -26,15 +26,29 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 final class StripTableAttributes implements Rule
 {
     /**
-     * @param  array<string, list<string>>  $tagAttributes  Map of tag name → list of attribute names to strip.
+     * @var array<string, list<string>>
      */
-    public function __construct(
-        private readonly array $tagAttributes = [
+    private readonly array $tagAttributes;
+
+    /**
+     * @param  array<string, list<string>>|null  $tagAttributes  Map of tag name → list of attribute names to strip; null uses the defaults.
+     */
+    public function __construct(?array $tagAttributes = null)
+    {
+        $this->tagAttributes = $tagAttributes ?? self::defaultTagAttributes();
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    private static function defaultTagAttributes(): array
+    {
+        return [
             'table' => ['height', 'width', 'border', 'cellpadding', 'cellspacing'],
             'td' => ['valign'],
             'ul' => ['type'],
-        ],
-    ) {}
+        ];
+    }
 
     public function apply(DOMDocument $document): void
     {
@@ -42,6 +56,9 @@ final class StripTableAttributes implements Rule
 
         foreach ($this->tagAttributes as $tag => $attrs) {
             foreach (XpathNodes::query($xpath, '//'.$tag) as $element) {
+                // //tag yields only elements, so the guard only narrows the type and the continue is unreachable.
+                // @pest-mutate-ignore: InstanceOfToTrue
+                // @pest-mutate-ignore: ContinueToBreak
                 if (! $element instanceof DOMElement) {
                     continue;
                 }

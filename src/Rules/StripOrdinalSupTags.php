@@ -43,7 +43,13 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
  */
 final class StripOrdinalSupTags implements Rule
 {
-    private const array ORDINAL_SUFFIXES = ['st', 'nd', 'rd', 'th'];
+    /**
+     * @return list<string>
+     */
+    private static function ordinalSuffixes(): array
+    {
+        return ['st', 'nd', 'rd', 'th'];
+    }
 
     public function apply(DOMDocument $document): void
     {
@@ -63,7 +69,7 @@ final class StripOrdinalSupTags implements Rule
     private function qualifies(DOMElement $sup): bool
     {
         $text = strtolower(mb_trim($sup->textContent));
-        if (! in_array($text, self::ORDINAL_SUFFIXES, true)) {
+        if (! in_array($text, self::ordinalSuffixes(), true)) {
             return false;
         }
 
@@ -85,19 +91,13 @@ final class StripOrdinalSupTags implements Rule
     private function previousCharacter(DOMElement $sup): ?string
     {
         $previous = $sup->previousSibling;
-        while ($previous instanceof DOMNode) {
-            if ($previous instanceof DOMText) {
-                $value = $previous->nodeValue ?? '';
-                if ($value === '') {
-                    $previous = $previous->previousSibling;
-
-                    continue;
-                }
-
+        while ($previous instanceof DOMText) {
+            $value = $previous->textContent;
+            if ($value !== '') {
                 return substr($value, -1);
             }
 
-            return null;
+            $previous = $previous->previousSibling;
         }
 
         return null;
@@ -106,6 +106,8 @@ final class StripOrdinalSupTags implements Rule
     private function unwrap(DOMElement $sup): void
     {
         $parent = $sup->parentNode;
+        // A sup found by tag name always has a parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
         if (! $parent instanceof DOMNode) {
             return;
         }

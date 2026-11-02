@@ -65,6 +65,8 @@ final class StripLeadingDateLine implements Rule
             $this->stripDateFrom($leadingText);
 
             if ($this->isEffectivelyEmpty($first)) {
+                // The paragraph was just read from the body, so it always has a parent.
+                // @pest-mutate-ignore: RemoveNullSafeOperator
                 $first->parentNode?->removeChild($first);
                 $this->trimLeadingWhitespaceTextNodes($body);
             }
@@ -111,6 +113,9 @@ final class StripLeadingDateLine implements Rule
     private function isEffectivelyEmpty(DOMElement $element): bool
     {
         foreach ($element->childNodes as $child) {
+            // The paragraph was read by its first non-whitespace child, so a whitespace text child is never followed by
+            // another child after the date is stripped: continuing or breaking returns the same result.
+            // @pest-mutate-ignore: ContinueToBreak
             if ($child instanceof DOMText && trim($child->textContent) === '') {
                 continue;
             }
