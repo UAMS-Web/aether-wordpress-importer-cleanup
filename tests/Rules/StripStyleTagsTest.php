@@ -40,3 +40,37 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
 
     expect($actualAfter)->toBe($expectedAfter);
 })->with('fixturePairs');
+
+/**
+ * @return string the serialized contents of the body of `$html` after the rule has run
+ */
+function stripStyleTagsBody(string $html): string
+{
+    $document = new DOMDocument('1.0', 'UTF-8');
+    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+
+    (new StripStyleTags)->apply($document);
+
+    $out = '';
+    foreach ($document->getElementsByTagName('body')->item(0)?->childNodes ?? [] as $child) {
+        $out .= $document->saveHTML($child);
+    }
+
+    return $out;
+}
+
+test('strip style tags rewrites matching markup', function (string $html, string $expected) {
+    expect(stripStyleTagsBody($html))->toBe($expected);
+})->with([
+    'style removed' => ['<p>a</p><style>p{color:red}</style><p>b</p>', '<p>a</p><p>b</p>'],
+    'style upper' => ['<p>a</p><STYLE>x</STYLE><p>b</p>', '<p>a</p><p>b</p>'],
+    'nested style' => ['<div>a<style>x</style>b</div>', '<div>ab</div>'],
+    'two styles' => ['<style>1</style><p>a</p><style>2</style>', '<p>a</p>'],
+]);
+
+test('strip style tags leaves other markup alone', function (string $html) {
+    expect(stripStyleTagsBody($html))->toBe($html);
+})->with([
+    'style attr kept' => ['<p style="color:red">a</p>'],
+    'no style' => ['<p>a</p>'],
+]);
