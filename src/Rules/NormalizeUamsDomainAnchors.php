@@ -49,15 +49,22 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
  */
 final class NormalizeUamsDomainAnchors implements Rule
 {
-    private const array CANONICAL = [
-        'uams.edu' => ['href' => 'https://uams.edu/', 'text' => 'uams.edu'],
-        'www.uams.edu' => ['href' => 'https://uams.edu/', 'text' => 'uams.edu'],
-        'uamshealth.com' => ['href' => 'https://uamshealth.com/', 'text' => 'uamshealth.com'],
-        'www.uamshealth.com' => ['href' => 'https://uamshealth.com/', 'text' => 'uamshealth.com'],
-    ];
+    /**
+     * @return array<string, array{href: string, text: string}>
+     */
+    private static function canonical(): array
+    {
+        return [
+            'uams.edu' => ['href' => 'https://uams.edu/', 'text' => 'uams.edu'],
+            'www.uams.edu' => ['href' => 'https://uams.edu/', 'text' => 'uams.edu'],
+            'uamshealth.com' => ['href' => 'https://uamshealth.com/', 'text' => 'uamshealth.com'],
+            'www.uamshealth.com' => ['href' => 'https://uamshealth.com/', 'text' => 'uamshealth.com'],
+        ];
+    }
 
     public function apply(DOMDocument $document): void
     {
+        $canonical = self::canonical();
         $candidates = [];
 
         foreach ($document->getElementsByTagName('a') as $anchor) {
@@ -70,11 +77,11 @@ final class NormalizeUamsDomainAnchors implements Rule
             }
 
             $key = strtolower(mb_trim($anchor->textContent));
-            if (! isset(self::CANONICAL[$key])) {
+            if (! isset($canonical[$key])) {
                 continue;
             }
 
-            $target = self::CANONICAL[$key];
+            $target = $canonical[$key];
             $anchor->setAttribute('href', $target['href']);
 
             while ($anchor->firstChild instanceof \DOMNode) {
