@@ -76,17 +76,16 @@ final class MergeAdjacentLists implements Rule
     private function nextNonWhitespaceSibling(DOMElement $element): ?DOMNode
     {
         $sibling = $element->nextSibling;
-        while ($sibling !== null) {
-            if ($sibling instanceof DOMText && mb_trim($sibling->nodeValue ?? '') === '') {
-                $sibling = $sibling->nextSibling;
-
-                continue;
-            }
-
-            return $sibling;
+        while ($sibling instanceof DOMNode && $this->isBlankText($sibling)) {
+            $sibling = $sibling->nextSibling;
         }
 
-        return null;
+        return $sibling;
+    }
+
+    private function isBlankText(DOMNode $node): bool
+    {
+        return $node instanceof DOMText && mb_trim($node->nodeValue ?? '') === '';
     }
 
     private function merge(DOMElement $list, DOMElement $next): void
