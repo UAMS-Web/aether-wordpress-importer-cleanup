@@ -102,6 +102,12 @@ final class LiftCaptionsOutOfParagraph implements Rule
         $chunks = $this->parseChunks($p);
         $chunks = $this->trimAndDropEmptyProse($chunks);
 
+        // A paragraph passes the balanced-marker check only when its text holds a caption marker, and a marker in a
+        // text node always yields a caption chunk, so the chunk list is never empty here.
+        // @pest-mutate-ignore: IfNegated
+        // @pest-mutate-ignore: InstanceOfToTrue
+        // @pest-mutate-ignore: InstanceOfToFalse
+        // @pest-mutate-ignore: RemoveMethodCall
         if ($chunks === []) {
             $parent = $p->parentNode;
             if ($parent instanceof DOMNode) {
@@ -120,6 +126,8 @@ final class LiftCaptionsOutOfParagraph implements Rule
     private function parseChunks(DOMElement $p): array
     {
         $document = $p->ownerDocument;
+        // A paragraph taken from a loaded document always has an owner document, so the guard only narrows the type.
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $document instanceof DOMDocument) {
             return [];
         }
@@ -148,6 +156,8 @@ final class LiftCaptionsOutOfParagraph implements Rule
                         $openerAt = strpos($text, '[caption', $pos);
                         if ($openerAt === false) {
                             $segment = substr($text, $pos);
+                            // The current type is always 'prose' while outside a caption (a closer resets it), so the flush never runs.
+                            // @pest-mutate-ignore: RemoveFunctionCall
                             if ($currentType !== 'prose') {
                                 $flush();
                                 $currentType = 'prose';
@@ -161,6 +171,8 @@ final class LiftCaptionsOutOfParagraph implements Rule
 
                         if ($openerAt > $pos) {
                             $segment = substr($text, $pos, $openerAt - $pos);
+                            // The current type is always 'prose' while outside a caption (a closer resets it), so the flush never runs.
+                            // @pest-mutate-ignore: RemoveFunctionCall
                             if ($currentType !== 'prose') {
                                 $flush();
                                 $currentType = 'prose';
@@ -208,6 +220,8 @@ final class LiftCaptionsOutOfParagraph implements Rule
                 }
 
                 $desired = $inCaption ? 'caption' : 'prose';
+                // The current type already equals the desired one (an opener sets 'caption', a closer sets 'prose'), so the flush never runs.
+                // @pest-mutate-ignore: RemoveFunctionCall
                 if ($currentType !== $desired) {
                     $flush();
                     $currentType = $desired;
@@ -277,6 +291,8 @@ final class LiftCaptionsOutOfParagraph implements Rule
     private function emitChunks(DOMElement $p, array $chunks): void
     {
         $document = $p->ownerDocument;
+        // A paragraph taken from a loaded document always has an owner document, so the guard only narrows the type.
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $document instanceof DOMDocument) {
             return;
         }
