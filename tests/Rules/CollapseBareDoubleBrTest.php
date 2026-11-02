@@ -40,3 +40,25 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
 
     expect($actualAfter)->toBe($expectedAfter);
 })->with('fixturePairs');
+
+test('whitespace around a double br run is trimmed and the text nodes are merged', function () {
+    $document = new DOMDocument;
+    $document->loadHTML('<html><body>Foo  <br> <br>  Bar</body></html>');
+
+    (new CollapseBareDoubleBr)->apply($document);
+
+    $body = $document->getElementsByTagName('body')->item(0);
+    expect($body?->textContent)->toBe("Foo\n\nBar")
+        ->and($body?->childNodes->length)->toBe(1);
+});
+
+test('a double br run at the start of the body is replaced', function () {
+    $document = new DOMDocument;
+    $document->loadHTML('<html><body><br><br>Bar</body></html>');
+
+    (new CollapseBareDoubleBr)->apply($document);
+
+    $body = $document->getElementsByTagName('body')->item(0);
+    expect($body?->textContent)->toBe("\n\nBar")
+        ->and($document->getElementsByTagName('br')->length)->toBe(0);
+});

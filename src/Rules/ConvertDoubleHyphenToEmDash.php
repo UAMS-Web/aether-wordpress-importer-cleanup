@@ -26,6 +26,8 @@ final class ConvertDoubleHyphenToEmDash implements Rule
         $xpath = new DOMXPath($document);
 
         foreach (XpathNodes::query($xpath, '//text()') as $textNode) {
+            // The guard only narrows the type: //text() yields text and CDATA nodes, both DOMText, so continue is unreachable.
+            // @pest-mutate-ignore: ContinueToBreak
             if (! $textNode instanceof DOMText) {
                 continue;
             }

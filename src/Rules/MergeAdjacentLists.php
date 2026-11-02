@@ -38,19 +38,21 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
  */
 final class MergeAdjacentLists implements Rule
 {
-    private const array LIST_TAGS = ['ul', 'ol'];
-
     public function apply(DOMDocument $document): void
     {
         do {
             $changed = false;
-            foreach (self::LIST_TAGS as $tag) {
+            foreach (['ul', 'ol'] as $tag) {
                 $lists = [];
                 foreach ($document->getElementsByTagName($tag) as $list) {
                     $lists[] = $list;
                 }
 
                 foreach ($lists as $list) {
+                    // A list already merged into an earlier one is detached: the guard skips it, and without the guard
+                    // nextNonWhitespaceSibling() returns null for it, so the loop reaches the same result.
+                    // @pest-mutate-ignore: InstanceOfToTrue
+                    // @pest-mutate-ignore: ContinueToBreak
                     if (! $list->parentNode instanceof DOMNode) {
                         continue;
                     }
@@ -74,17 +76,16 @@ final class MergeAdjacentLists implements Rule
     private function nextNonWhitespaceSibling(DOMElement $element): ?DOMNode
     {
         $sibling = $element->nextSibling;
-        while ($sibling instanceof DOMNode) {
-            if ($sibling instanceof DOMText && mb_trim($sibling->nodeValue ?? '') === '') {
-                $sibling = $sibling->nextSibling;
-
-                continue;
-            }
-
-            return $sibling;
+        while ($sibling instanceof DOMNode && $this->isBlankText($sibling)) {
+            $sibling = $sibling->nextSibling;
         }
 
-        return null;
+        return $sibling;
+    }
+
+    private function isBlankText(DOMNode $node): bool
+    {
+        return $node instanceof DOMText && mb_trim($node->nodeValue ?? '') === '';
     }
 
     private function merge(DOMElement $list, DOMElement $next): void
@@ -99,6 +100,8 @@ final class MergeAdjacentLists implements Rule
         }
 
         $parent = $next->parentNode;
+        // A list that was found as a sibling always has a parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
         if ($parent instanceof DOMNode) {
             $parent->removeChild($next);
         }

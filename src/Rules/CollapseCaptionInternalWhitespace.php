@@ -58,6 +58,9 @@ final class CollapseCaptionInternalWhitespace implements Rule
 
         foreach ($brsToReplace as $br) {
             $parent = $br->parentNode;
+            // A br collected from the walk always has a parent, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
+            // @pest-mutate-ignore: ContinueToBreak
             if (! $parent instanceof DOMNode) {
                 continue;
             }
