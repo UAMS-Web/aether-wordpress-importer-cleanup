@@ -47,12 +47,16 @@ final class DuplicateSetFinder
 
         $excludedKeys = [];
         foreach ($excluded as $permalink) {
+            // Only isset reads this value; either boolean preserves membership.
+            // @pest-mutate-ignore:TrueToFalse
             $excludedKeys[$permalink['date'].'|'.$permalink['slug']] = true;
         }
 
         $liveSlugs = [];
         foreach ($posts as $post) {
             if ($post['status'] === 'publish') {
+                // Only isset reads this value; either boolean preserves membership.
+                // @pest-mutate-ignore:TrueToFalse
                 $liveSlugs[$post['slug']] = true;
             }
         }
@@ -102,6 +106,9 @@ final class DuplicateSetFinder
         $kept = [];
 
         foreach ($members as $member) {
+            // A matched -N leaves digits absent from groupKey, with or without
+            // replacing hyphens. A failed match short-circuits this comparison.
+            // @pest-mutate-ignore:EmptyStringToNotEmpty,UnwrapStrReplace
             if (preg_match('/^(.*)-\d+$/', $member['slug'], $match) === 1
                 && ! \in_array($match[1], $slugs, true)
                 && str_replace('-', '', $member['slug']) !== self::groupKey($member['slug'])
@@ -143,6 +150,8 @@ final class DuplicateSetFinder
     private static function resolve(array $members, array $liveSlugs): ?array
     {
         $memberSlugs = array_column($members, 'slug');
+        // Keys are ignored by foreach and reindexed by lowestSuffixed's usort.
+        // @pest-mutate-ignore:UnwrapArrayValues
         $hyphenated = array_values(array_filter($memberSlugs, fn (string $slug): bool => str_contains($slug, '-')));
 
         $base = null;
@@ -158,12 +167,16 @@ final class DuplicateSetFinder
             ? $base
             : null;
 
+        // Column extraction and filtering ignore keys; complete is reindexed below.
+        // @pest-mutate-ignore:UnwrapArrayValues
         $published = array_values(array_filter($members, fn (array $member): bool => $member['status'] === 'publish'));
         if ($published === []) {
             return null;
         }
 
         $most = max(array_column($published, 'words'));
+        // usort reindexes this list before the only indexed read.
+        // @pest-mutate-ignore:UnwrapArrayValues
         $complete = array_values(array_filter(
             $published,
             fn (array $member): bool => $member['words'] >= $most * (1 - self::EQUAL_WORDS_TOLERANCE),

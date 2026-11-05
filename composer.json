@@ -9,6 +9,7 @@
         "ext-libxml": "*"
     },
     "require-dev": {
+        "cweagans/composer-patches": "^2.0",
         "laravel/pint": "^1.29",
         "mrpunyapal/peststan": "^0.2.10",
         "pestphp/pest": "^4.7",
@@ -34,6 +35,7 @@
     "config": {
         "sort-packages": true,
         "allow-plugins": {
+            "cweagans/composer-patches": true,
             "pestphp/pest-plugin": true,
             "phpstan/extension-installer": true
         }

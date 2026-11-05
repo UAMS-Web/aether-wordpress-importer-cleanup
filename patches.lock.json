@@ -1,0 +1,17 @@
+{
+    "_hash": "6dbf188e5e912c9d5bffd77902b883a3120bbcb193048ef8025a45371cbc8b81",
+    "patches": {
+        "pestphp/pest-plugin-mutate": [
+            {
+                "package": "pestphp/pest-plugin-mutate",
+                "description": "Map class constant mutants to tests covering the containing class (temporary; tracked in #11)",
+                "url": "patches/pest-class-constant-coverage.patch",
+                "sha256": "1b1684f7708ff201d64833ca11d82593480882a6be44c8f12a31fb7032c6cdca",
+                "depth": 1,
+                "extra": {
+                    "provenance": "patches-file:patches.json"
+                }
+            }
+        ]
+    }
+}

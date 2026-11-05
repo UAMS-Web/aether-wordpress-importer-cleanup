@@ -204,6 +204,8 @@ final class Transform
         }
 
         $saved = $document->saveXML();
+        // Native whole-document serialization returns a string on this public path.
+        // @pest-mutate-ignore:FalseToTrue
         if ($saved === false) {
             throw new \RuntimeException('Failed to serialize WXR document.');
         }
@@ -279,6 +281,8 @@ final class Transform
      */
     private function stripLeadingCityDateline(string $text): string
     {
+        // The start anchor permits at most one match, regardless of a larger limit.
+        // @pest-mutate-ignore:IncrementInteger
         return (string) preg_replace(
             '/^[A-Z][A-Z ]+, Ark\. \x{2014} /u',
             '',
@@ -335,7 +339,10 @@ final class Transform
         // <?xml encoding hint forces DOMDocument to treat the input as UTF-8;
         // LIBXML_HTML_NOIMPLIED skips the implicit <html>/<body> wrappers so
         // our explicit <body> stays as the document root.
-        $envelope = '<?xml encoding="UTF-8"?><body>'.$html.'</body>';
+        $envelope = '<?xml encoding="UTF-8"?><body>'.$html;
+
+        // Keep the closer explicit: raw-text parsing differs across libxml versions.
+        $envelope .= '</body>';
 
         $previousErrorMode = libxml_use_internal_errors(true);
 

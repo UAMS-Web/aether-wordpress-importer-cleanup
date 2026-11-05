@@ -1,0 +1,7 @@
+{
+    "patches": {
+        "pestphp/pest-plugin-mutate": {
+            "Map class constant mutants to tests covering the containing class (temporary; tracked in #11)": "patches/pest-class-constant-coverage.patch"
+        }
+    }
+}
