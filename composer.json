@@ -44,7 +44,7 @@
         "test": "pest",
         "mutate": [
             "Composer\\Config::disableProcessTimeout",
-            "@php vendor/bin/pest --mutate --path=src"
+            "@php vendor/bin/pest --mutate --path=src/Disposition,src/Rule.php,src/Transform.php,src/XpathNodes.php"
         ],
         "refactor": "rector",
         "refactor:sweep": "rector --clear-cache --config=rector-sweep.php",
@@ -53,5 +53,8 @@
         "pint": "pint",
         "test:pint": "pint --test",
         "stan": "phpstan analyse"
+    },
+    "scripts-descriptions": {
+        "mutate": "Mutate the src paths that are mutation-clean on Linux and macOS; src/Rules is left out until UAMS-Web/aether-wordpress-importer-cleanup#41 restores --path=src"
     }
 }
