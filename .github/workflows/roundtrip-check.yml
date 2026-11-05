@@ -1,0 +1,30 @@
+name: HTMLDocument round-trip check (throwaway)
+
+# Throwaway for UAMS-Web/aether-wordpress-importer-cleanup#49: print the Dom\HTMLDocument round-trip
+# hashes of the public fixtures on each operating system so they can be compared. Delete with its branch.
+on:
+  push:
+    branches: [49-roundtrip-check]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: roundtrip (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+      - name: Round trip
+        shell: bash
+        run: |
+          files=$(find tests/fixtures -name '*.before.xml' | LC_ALL=C sort)
+          php scripts/htmldocument-roundtrip-check.php $files probe/libxml-probe.xml | tee roundtrip.txt
+          echo "SUMMARY $(tail -n +2 roundtrip.txt | php -r 'echo hash("sha256", stream_get_contents(STDIN));')"
