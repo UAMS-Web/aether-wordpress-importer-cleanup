@@ -15,4 +15,9 @@
 <P></P&gt;
 <P class=MsoNormal>after</P>]]></content:encoded></item>
 <item><title>script-with-markup</title><wp:post_id>11</wp:post_id><content:encoded><![CDATA[<script>var s = "(from <i>"+pid+"</i>)"; function f(o){ return o; }</script>]]></content:encoded></item>
+<item><title>pi-leading</title><wp:post_id>20</wp:post_id><content:encoded><![CDATA[<?xml:namespace prefix = o /><o:p> 
+<P>Computer classes are held monthly.</P>]]></content:encoded></item>
+<item><title>pi-inline</title><wp:post_id>21</wp:post_id><content:encoded><![CDATA[<P>Less than 10 percent of <?XML:NAMESPACE PREFIX = ST1 />Arkansas schools offer snacks.</P>]]></content:encoded></item>
+<item><title>pi-before-close</title><wp:post_id>22</wp:post_id><content:encoded><![CDATA[<P>Officials said.<?XML:NAMESPACE PREFIX = O /></P>
+<P>Next.</P>]]></content:encoded></item>
 </channel></rss>
