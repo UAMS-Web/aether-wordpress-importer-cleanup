@@ -20,6 +20,10 @@ jobs:
   checks:
     uses: UAMS-Web/uams-ci-workflows/.github/workflows/ci.yml@v0.1.0
     with:
+      # On a pull request the mutate job mutates the changed PHP files under this path. On a push it
+      # ignores this input and runs `composer mutate`, whose `--path` list leaves out `src/Rules`
+      # until UAMS-Web/aether-wordpress-importer-cleanup#41 makes it mutation-clean on Linux and
+      # restores `--path=src` there.
       mutate-paths: src
 
   mutate-ignore-breadth:
