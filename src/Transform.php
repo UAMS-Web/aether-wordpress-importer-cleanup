@@ -503,17 +503,20 @@ final class Transform
     }
 
     /**
-     * Normalize `<embed></embed>` to the void-element form `<embed>`.
+     * Drop every `</embed>` closer so `<embed>` is always the void element.
      *
      * libxml's HTML serializer disagrees with itself across versions on
      * whether `<embed>` is a void element: 2.15.x emits `<embed src="x">`
      * with no closing tag, older 2.9.x/2.10.x builds emit
-     * `<embed src="x"></embed>`. The HTML5 spec treats `<embed>` as
-     * void, so we standardize on that form — collapsing the empty-closer
-     * variant to match the void-element output.
+     * `<embed src="x"></embed>`. Those older builds also parse a void
+     * `<embed>` as an open element, so two embeds in a row nest and the
+     * outer one keeps a closer after the inner one is stripped. The HTML5
+     * spec treats `<embed>` as void and a void element has no closer, so
+     * every closer goes, which also leaves a repeated pass with nothing
+     * new to change.
      */
     private function normalizeVoidEmbeds(string $html): string
     {
-        return (string) preg_replace('/<embed\b([^>]*)><\/embed>/i', '<embed$1>', $html);
+        return (string) preg_replace('/<\/embed\s*>/i', '', $html);
     }
 }

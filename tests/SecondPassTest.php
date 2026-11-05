@@ -154,3 +154,32 @@ test('an excerpt dateline is stripped in the first pass, not left for the second
     'en dash' => ["LITTLE ROCK \u{2013}"],
     'hyphen' => ['LITTLE ROCK -'],
 ]);
+
+test('every embed closer is dropped, including the one an older libxml leaves on a nested embed', function (): void {
+    // Older libxml nests a second void embed inside the first, so only the inner closer matched before.
+    $rule = new class implements Rule
+    {
+        public function apply(DOMDocument $document): void
+        {
+            $body = $document->getElementsByTagName('body')->item(0);
+
+            if ($body?->firstChild === null) {
+                $body?->appendChild($document->createCDATASection('<embed src="a.swf"><embed src="b.swf"></embed></embed>'));
+            }
+        }
+    };
+
+    expect(new Transform([$rule])->apply(secondPassWxr('')))
+        ->toContain('<![CDATA[<embed src="a.swf"><embed src="b.swf">]]>');
+});
+
+test('void embed normalization removes every closer, not only an empty pair', function (string $html, string $expected): void {
+    // Call the step directly: the repeat passes would otherwise hide a left-over closer on a current libxml.
+    $normalize = new ReflectionMethod(Transform::class, 'normalizeVoidEmbeds');
+
+    expect($normalize->invoke(Transform::withDefaultRules(), $html))->toBe($expected);
+})->with([
+    'empty pair' => ['<embed src="a.swf"></embed>', '<embed src="a.swf">'],
+    'nested embeds' => ['<embed src="a.swf"><embed src="b.swf"></embed></embed>', '<embed src="a.swf"><embed src="b.swf">'],
+    'closer with whitespace and case' => ['<embed src="a.swf"></EMBED >', '<embed src="a.swf">'],
+]);
