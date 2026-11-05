@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:wp="http://wordpress.org/export/1.2/"><channel>
+<item><title>quotes-both</title><wp:post_id>1</wp:post_id><content:encoded><![CDATA[<img src="a.jpg" alt="She said &quot;hello&quot; today" width="300" />]]></content:encoded></item>
+<item><title>quotes-single-and-double</title><wp:post_id>2</wp:post_id><content:encoded><![CDATA[<img src='b.jpg' alt='It&apos;s &quot;fine&quot; now'>]]></content:encoded></item>
+<item><title>ampersand</title><wp:post_id>3</wp:post_id><content:encoded><![CDATA[<a href="/p?x=1&amp;y=2" title="A &amp; B">link</a>]]></content:encoded></item>
+<item><title>href-leading-space</title><wp:post_id>4</wp:post_id><content:encoded><![CDATA[<p>April 23 - <a href=" /?id=11843&amp;sid=1 ">A threat</a> - end</p>]]></content:encoded></item>
+<item><title>href-leading-and-trailing-space-http</title><wp:post_id>5</wp:post_id><content:encoded><![CDATA[<a href="  http://example.com/a b ">x</a>]]></content:encoded></item>
+<item><title>lt-in-href</title><wp:post_id>6</wp:post_id><content:encoded><![CDATA[<P><A href="http://example.com/info.cfm?r=13<ID=1&abc=123" target=_blank>Sign up</A></P>]]></content:encoded></item>
+<item><title>close-tag-entity-p</title><wp:post_id>7</wp:post_id><content:encoded><![CDATA[<P>First.</P>
+<P>Second line.</P&gt;
+<P>Third.</P>]]></content:encoded></item>
+<item><title>close-tag-entity-br</title><wp:post_id>8</wp:post_id><content:encoded><![CDATA[<P>one<BR>two<BR&gt;<BR>three</BR&gt;<BR></P>]]></content:encoded></item>
+<item><title>valueless-href-question</title><wp:post_id>9</wp:post_id><content:encoded><![CDATA[<TABLE width="100%"><TBODY><TR><TD><a originalPath="" target="_blank" href?></a></TD></TR></TBODY></TABLE>]]></content:encoded></item>
+<item><title>empty-p-close-entity</title><wp:post_id>10</wp:post_id><content:encoded><![CDATA[<FONT size=2>text</FONT>
+<P></P&gt;
+<P class=MsoNormal>after</P>]]></content:encoded></item>
+<item><title>script-with-markup</title><wp:post_id>11</wp:post_id><content:encoded><![CDATA[<script>var s = "(from <i>"+pid+"</i>)"; function f(o){ return o; }</script>]]></content:encoded></item>
+</channel></rss>

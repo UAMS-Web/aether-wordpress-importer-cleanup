@@ -1,0 +1,66 @@
+name: libxml probe (throwaway)
+
+# Throwaway measurement for UAMS-Web/aether-wordpress-importer-cleanup#48: clean one small synthetic
+# WXR on several runners and print the environment and the output. Delete with its branch.
+on:
+  push:
+    branches: [48-libxml-probe]
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: probe (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-22.04, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+      - run: composer install --no-dev --no-interaction --prefer-dist --no-scripts
+      - name: Environment and output
+        shell: bash
+        run: |
+          echo "OS=${{ matrix.os }} runner=$RUNNER_OS"
+          php -r 'echo "PHP ", PHP_VERSION, " libxml ", LIBXML_DOTTED_VERSION, " (compiled ", LIBXML_VERSION, ")\n";'
+          git rev-parse HEAD
+          php bin/wxr-cleanup probe/libxml-probe.xml probe/out.xml
+          echo "exit=$?"
+          echo "----- OUTPUT -----"
+          cat probe/out.xml
+          echo "----- SHA -----"
+          php -r 'echo sha1(str_replace("\r\n","\n",file_get_contents("probe/out.xml"))), "\n";'
+
+  probe-container:
+    name: probe (php:8.4-cli container)
+    runs-on: ubuntu-latest
+    container: php:8.4-cli
+    steps:
+      - uses: actions/checkout@v7
+      - name: Environment and output
+        shell: bash
+        run: |
+          php -r 'echo "PHP ", PHP_VERSION, " libxml ", LIBXML_DOTTED_VERSION, "\n";'
+          cat /etc/os-release | head -2
+          printf '<?php require "src/Rule.php";' > /dev/null
+          # No vendor dir: register the PSR-4 namespace by hand instead of installing Composer.
+          cat > probe/autoload.php <<'PHP'
+          <?php
+          spl_autoload_register(function (string $c): void {
+              $p = 'UAMSWeb\\Aether\\WordPressImporter\\Cleanup\\';
+              if (str_starts_with($c, $p)) {
+                  require __DIR__.'/../src/'.str_replace('\\', '/', substr($c, strlen($p))).'.php';
+              }
+          });
+          PHP
+          php -r 'require "probe/autoload.php"; $x = (new UAMSWeb\Aether\WordPressImporter\Cleanup\Transform(UAMSWeb\Aether\WordPressImporter\Cleanup\Transform::defaultRules()))->apply(file_get_contents("probe/libxml-probe.xml")); file_put_contents("probe/out.xml", $x);'
+          echo "----- OUTPUT -----"
+          cat probe/out.xml
+          echo "----- SHA -----"
+          php -r 'echo sha1(file_get_contents("probe/out.xml")), "\n";'
