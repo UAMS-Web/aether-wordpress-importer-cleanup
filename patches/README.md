@@ -1,10 +1,29 @@
 # Temporary development patches
 
+All eight patches target `pestphp/pest-plugin-mutate` `v5.0.2`
+(`d0c87110416b699413cc073b8dcc92e440d81931`), which Pest `^5.3` installs.
+
+## Mutation run correctness (seven patches)
+
+The seven `pest-plugin-mutate-*.patch` files are copied byte for byte from
+`UAMS-Web/statamic-addon-template` on `main`, where they are registered in the
+same root-only `patches.json`. On Windows the stock plugin counts a mutant as
+killed when its test process never ran a test, so a mutation run scores 100%
+whatever the suite detects (UAMS-Web/uams-claude-skills#544; upstream
+pestphp/pest#1937, fixed by the unmerged pestphp/pest-plugin-mutate#45). The
+patches launch each mutant child correctly, stop silent `@pest-mutate-ignore`
+parsing defects, and keep a filtered or parallel run from scoring every mutant
+killed. They are retired with the shared patch set
+(UAMS-Web/uams-claude-skills#548) or when an installable upstream release
+carries the fix.
+
 ## Class-constant mutation coverage
 
-`pest-class-constant-coverage.patch` targets `pestphp/pest-plugin-mutate`
-`v4.0.1` (`d9b32b60b2385e1688a68cc227594738ec26d96c`). It supports the
-coverage work in #11 without changing application behavior.
+`pest-class-constant-coverage.patch` was written for `v4.0.1`
+(`d9b32b60b2385e1688a68cc227594738ec26d96c`) and still applies to the `v5.0.2`
+plugin. With it removed, `tests/ConstantMutationCoverageTest.php` fails on
+`v5.0.2` (944 tests, 1 failed) and passes with it, so the patch is kept. It
+supports the coverage work in #11 without changing application behavior.
 
 The stock plugin selects tests using coverage on a mutant's source lines.
 Class-constant initializers have no executable lines, so their mutants are
