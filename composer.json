@@ -12,8 +12,8 @@
         "cweagans/composer-patches": "^2.0",
         "laravel/pint": "^1.29",
         "mrpunyapal/peststan": "^0.2.10",
-        "pestphp/pest": "^4.7",
-        "pestphp/pest-plugin-drift": "^4.1",
+        "pestphp/pest": "^5.3",
+        "pestphp/pest-plugin-drift": "^5.0",
         "phpstan/extension-installer": "^1.4",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
@@ -32,6 +32,9 @@
     "bin": [
         "bin/wxr-cleanup"
     ],
+    "extra": {
+        "composer-exit-on-patch-failure": true
+    },
     "config": {
         "sort-packages": true,
         "allow-plugins": {
