@@ -119,7 +119,7 @@ final class UnwrapCaptionOnlyTable implements Rule
     private function isVisuallyEmpty(DOMElement $td): bool
     {
         foreach ($td->childNodes as $child) {
-            if ($child instanceof DOMElement && strtolower($child->nodeName) !== 'br') {
+            if ($child instanceof DOMElement && $child->nodeName !== 'br') {
                 return false;
             }
         }
@@ -157,7 +157,7 @@ final class UnwrapCaptionOnlyTable implements Rule
             $parent->insertBefore($document->createTextNode("\n"), $table);
             while ($td->firstChild instanceof DOMNode) {
                 $child = $td->firstChild;
-                if ($child instanceof DOMText && mb_trim($child->nodeValue ?? '') === '') {
+                if ($child instanceof DOMText && mb_trim($child->nodeValue ?? 'PEST Mutator was here!') === '') {
                     $td->removeChild($child);
 
                     continue;
