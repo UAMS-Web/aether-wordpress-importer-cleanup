@@ -6,7 +6,11 @@ Everything above the generated section below belongs to this repository and is e
 
 ## About this repository
 
-Replace this section with what an agent needs to know before working here: what the repository is, how to install and run it, how to run its tests and checks, the conventions it follows, and anything that is true of this repository alone. The shared skills and rules below cover the organization-wide conventions; do not repeat them here.
+This PHP CLI library cleans WordPress WXR exports for import. It requires PHP 8.4 and DOM/libxml; development also needs mbstring, ZIP, and PCOV for mutation testing. No database, environment secrets, or long-running service is needed.
+
+In a Debian 12 Amp orb, run `.agents/setup`. It installs PHP 8.4 and Composer 2 when missing, installs development dependencies, and reapplies the committed mutation-tool patches. The library ignores `composer.lock`: setup retains a current generated lock and replaces a stale ignored lock when the manifest changes. A tracked lock is never removed. `.agents/resume` only checks the existing toolchain and dependencies; it never installs anything. Both scripts are orb-only, not macOS or Windows host installers.
+
+Run `composer test` for the ordinary suite, `composer test:pint` for formatting, `composer test:refactor` for the Rector dry run, and `composer stan` for static analysis. Run mutation checks through `composer mutate`, not a bare Pest invocation; its current scope and patch requirements are documented in `README.md` and `patches/README.md`.
 
 <!-- uams-claude-skills:begin -->
 ## Shared skills and rules
