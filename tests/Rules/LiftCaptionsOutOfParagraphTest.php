@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Dom\HTMLDocument;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\CollapseExtraLineBreaks;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\LiftCaptionsOutOfParagraph;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Tests\Fixture;
@@ -47,13 +48,12 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
 })->with('fixturePairs');
 
 test('captions are lifted out of their paragraph', function (string $html, string $expected) {
-    $document = new DOMDocument;
-    $document->loadHTML('<html><body>'.$html.'</body></html>');
+    $document = Fixture::document($html);
 
     (new LiftCaptionsOutOfParagraph)->apply($document);
 
     $body = $document->getElementsByTagName('body')->item(0);
-    expect($document->saveHTML($body))->toBe("<body>{$expected}</body>");
+    expect($document->saveHtml($body))->toBe("<body>{$expected}</body>");
 })->with([
     'docblock example' => ["<p>\n[caption]<img src=\"a\"> Foo[/caption]\nLorem ipsum.\n[caption]<img src=\"b\"> Baz[/caption]\n</p>", "\n\n[caption]<img src=\"a\"> Foo[/caption]\n\n<p>Lorem ipsum.</p>\n\n[caption]<img src=\"b\"> Baz[/caption]\n\n"],
     'stacked captions take one newline' => ['<p>[caption]a[/caption] [caption]b[/caption]</p>', "\n\n[caption]a[/caption]\n[caption]b[/caption]\n\n"],
@@ -70,10 +70,9 @@ test('captions are lifted out of their paragraph', function (string $html, strin
 ]);
 
 test('a paragraph with unbalanced markers is left alone', function () {
-    $document = new DOMDocument;
-    $document->loadHTML('<html><body><p>[caption]x</p></body></html>');
+    $document = HTMLDocument::createFromString('<html><body><p>[caption]x</p></body></html>', LIBXML_NOERROR);
 
     (new LiftCaptionsOutOfParagraph)->apply($document);
 
-    expect($document->saveHTML($document->getElementsByTagName('body')->item(0)))->toBe('<body><p>[caption]x</p></body>');
+    expect($document->saveHtml($document->getElementsByTagName('body')->item(0)))->toBe('<body><p>[caption]x</p></body>');
 });

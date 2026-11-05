@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMText;
-use DOMXPath;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\Text;
+use Dom\XPath;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -38,16 +39,16 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class LiftTrailingBr implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
         do {
             $changed = false;
 
             $brs = [];
             foreach (XpathNodes::query($xpath, '//br') as $br) {
-                if ($br instanceof DOMElement) {
+                if ($br instanceof Element) {
                     $brs[] = $br;
                 }
             }
@@ -62,18 +63,18 @@ final class LiftTrailingBr implements Rule
         } while ($changed);
     }
 
-    private function liftIfTrailing(DOMElement $br): bool
+    private function liftIfTrailing(Element $br): bool
     {
         $parent = $br->parentNode;
 
         // A br found by //br in an HTML body always has an element parent, so the guard only narrows the type.
         // @pest-mutate-ignore: FalseToTrue
         // @pest-mutate-ignore: RemoveEarlyReturn
-        if (! $parent instanceof DOMElement) {
+        if (! $parent instanceof Element) {
             return false;
         }
 
-        if (in_array($parent->nodeName, ['body', 'p', 'li', 'td', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'], true)) {
+        if (in_array($parent->localName, ['body', 'p', 'li', 'td', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'], true)) {
             return false;
         }
 
@@ -86,7 +87,7 @@ final class LiftTrailingBr implements Rule
         // @pest-mutate-ignore: InstanceOfToTrue
         // @pest-mutate-ignore: FalseToTrue
         // @pest-mutate-ignore: RemoveEarlyReturn
-        if (! $grandparent instanceof \DOMNode) {
+        if (! $grandparent instanceof Node) {
             return false;
         }
 
@@ -98,12 +99,12 @@ final class LiftTrailingBr implements Rule
         return true;
     }
 
-    private function isLastNonWhitespaceChild(DOMElement $br): bool
+    private function isLastNonWhitespaceChild(Element $br): bool
     {
         $cursor = $br->nextSibling;
 
-        while ($cursor instanceof \DOMNode) {
-            if ($cursor instanceof DOMText && trim($cursor->textContent) === '') {
+        while ($cursor instanceof Node) {
+            if ($cursor instanceof Text && trim((string) $cursor->textContent) === '') {
                 $cursor = $cursor->nextSibling;
 
                 continue;
@@ -115,11 +116,11 @@ final class LiftTrailingBr implements Rule
         return true;
     }
 
-    private function dropFollowingWhitespace(DOMElement $br, DOMElement $parent): void
+    private function dropFollowingWhitespace(Element $br, Element $parent): void
     {
         $cursor = $br->nextSibling;
 
-        while ($cursor instanceof \DOMNode) {
+        while ($cursor instanceof Node) {
             $toRemove = $cursor;
             $cursor = $cursor->nextSibling;
             $parent->removeChild($toRemove);

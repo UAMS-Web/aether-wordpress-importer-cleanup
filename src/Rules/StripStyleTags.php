@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMXPath;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\XPath;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -26,9 +26,9 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class StripStyleTags implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
         $lower = "translate(name(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')";
         $query = "//*[{$lower}='style']";
@@ -37,7 +37,7 @@ final class StripStyleTags implements Rule
         foreach (XpathNodes::query($xpath, $query) as $element) {
             // The query selects only elements, so the guard only narrows the type.
             // @pest-mutate-ignore: InstanceOfToTrue
-            if ($element instanceof DOMElement) {
+            if ($element instanceof Element) {
                 $elements[] = $element;
             }
         }
@@ -47,7 +47,7 @@ final class StripStyleTags implements Rule
             // An element found by XPath always has a parent, so the guard only narrows the type and the continue is unreachable.
             // @pest-mutate-ignore: InstanceOfToTrue
             // @pest-mutate-ignore: ContinueToBreak
-            if (! $parent instanceof DOMNode) {
+            if (! $parent instanceof Node) {
                 continue;
             }
 

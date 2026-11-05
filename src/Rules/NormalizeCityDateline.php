@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMText;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\Text;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -79,16 +79,16 @@ final class NormalizeCityDateline implements Rule
         ];
     }
 
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
         $body = $document->getElementsByTagName('body')->item(0);
 
-        if (! $body instanceof DOMElement) {
+        if (! $body instanceof Element) {
             return;
         }
 
         $textNode = $this->findLeadingTextNode($body);
-        if (! $textNode instanceof DOMText) {
+        if (! $textNode instanceof Text) {
             return;
         }
 
@@ -101,16 +101,16 @@ final class NormalizeCityDateline implements Rule
         );
     }
 
-    private function findLeadingTextNode(DOMNode $container): ?DOMText
+    private function findLeadingTextNode(Node $container): ?Text
     {
         $first = $container->firstChild;
 
-        if ($first instanceof DOMText) {
+        if ($first instanceof Text) {
             return $first;
         }
 
-        if ($first instanceof DOMElement
-            && in_array($first->nodeName, ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'], true)) {
+        if ($first instanceof Element
+            && in_array($first->localName, ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'], true)) {
             return $this->findLeadingTextNode($first);
         }
 

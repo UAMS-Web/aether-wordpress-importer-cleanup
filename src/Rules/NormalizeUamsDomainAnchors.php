@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMText;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\Text;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -62,7 +63,7 @@ final class NormalizeUamsDomainAnchors implements Rule
         ];
     }
 
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
         $canonical = self::canonical();
         $candidates = [];
@@ -76,7 +77,7 @@ final class NormalizeUamsDomainAnchors implements Rule
                 continue;
             }
 
-            $key = strtolower(mb_trim($anchor->textContent));
+            $key = strtolower(mb_trim((string) $anchor->textContent));
             if (! isset($canonical[$key])) {
                 continue;
             }
@@ -84,7 +85,7 @@ final class NormalizeUamsDomainAnchors implements Rule
             $target = $canonical[$key];
             $anchor->setAttribute('href', $target['href']);
 
-            while ($anchor->firstChild instanceof \DOMNode) {
+            while ($anchor->firstChild instanceof Node) {
                 $anchor->removeChild($anchor->firstChild);
             }
 
@@ -92,10 +93,10 @@ final class NormalizeUamsDomainAnchors implements Rule
         }
     }
 
-    private function isTextOnly(DOMElement $anchor): bool
+    private function isTextOnly(Element $anchor): bool
     {
         foreach ($anchor->childNodes as $child) {
-            if (! $child instanceof DOMText) {
+            if (! $child instanceof Text) {
                 return false;
             }
         }

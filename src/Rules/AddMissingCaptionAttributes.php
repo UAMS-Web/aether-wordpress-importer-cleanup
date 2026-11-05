@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMText;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\Text;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -54,10 +54,10 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
  */
 final class AddMissingCaptionAttributes implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
         $body = $document->getElementsByTagName('body')->item(0);
-        if (! $body instanceof DOMElement) {
+        if (! $body instanceof Element) {
             return;
         }
 
@@ -65,9 +65,9 @@ final class AddMissingCaptionAttributes implements Rule
         $this->walk($body, $inCaption);
     }
 
-    private function walk(DOMNode $node, bool &$inCaption): void
+    private function walk(Node $node, bool &$inCaption): void
     {
-        if ($node instanceof DOMText) {
+        if ($node instanceof Text) {
             $text = $node->nodeValue ?? '';
             $rewritten = $this->rewriteTextNode($text, $inCaption);
             if ($rewritten !== $text) {
@@ -77,8 +77,8 @@ final class AddMissingCaptionAttributes implements Rule
             return;
         }
 
-        if ($node instanceof DOMElement
-            && strtolower($node->nodeName) === 'img'
+        if ($node instanceof Element
+            && $node->localName === 'img'
             && $inCaption
             && ! $node->hasAttribute('width')
         ) {

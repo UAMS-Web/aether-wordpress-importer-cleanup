@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Dom\HTMLDocument;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\StripLeadingDateLine;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Tests\Fixture;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Transform;
@@ -46,17 +47,11 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  */
 function stripLeadingDateLineBody(string $html): string
 {
-    $document = new DOMDocument('1.0', 'UTF-8');
-    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    $document = Fixture::document($html);
 
     (new StripLeadingDateLine)->apply($document);
 
-    $out = '';
-    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
-        $out .= $document->saveHTML($child);
-    }
-
-    return $out;
+    return Fixture::bodyHtml($document);
 }
 
 test('strip leading date line rewrites matching markup', function (string $html, string $expected) {
@@ -119,7 +114,7 @@ test('strip leading date line leaves other markup alone', function (string $html
 ]);
 
 test('strip leading date line ignores a document without a body', function () {
-    $document = new DOMDocument;
+    $document = HTMLDocument::createEmpty();
 
     (new StripLeadingDateLine)->apply($document);
 

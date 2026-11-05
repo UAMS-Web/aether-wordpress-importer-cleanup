@@ -46,17 +46,11 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  */
 function promoteBoldToInnerStrongBody(string $html): string
 {
-    $document = new DOMDocument('1.0', 'UTF-8');
-    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    $document = Fixture::document($html);
 
     (new PromoteBoldToInnerStrong)->apply($document);
 
-    $out = '';
-    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
-        $out .= $document->saveHTML($child);
-    }
-
-    return $out;
+    return Fixture::bodyHtml($document);
 }
 
 test('promote bold to inner strong rewrites matching markup', function (string $html, string $expected) {
@@ -68,6 +62,8 @@ test('promote bold to inner strong rewrites matching markup', function (string $
     'b with element then pair' => ['<b><i>x</i></b><p>y</p><b></b><p>z</p>', '<b><i>x</i></b><p>y</p><p><strong>z</strong></p>'],
     'two pairs' => ['<b></b><p>a</p><b></b><p>b</p>', '<p><strong>a</strong></p><p><strong>b</strong></p>'],
     'comment in b' => ['<b> <!-- c --> </b><p>x</p>', '<p><strong>x</strong></p>'],
+    'p nested in b by an HTML5 parser' => ["<b>\n<p>x</p>\n</b>", "<p><strong>x</strong></p>\n"],
+    'two p nested in one b' => ['<b><p>a</p> <p>b</p></b>', '<p><strong>a</strong></p> <p><strong>b</strong></p>'],
     'p with attributes' => ['<b></b><p class="k">x</p>', '<p class="k"><strong>x</strong></p>'],
 ]);
 
@@ -79,5 +75,7 @@ test('promote bold to inner strong leaves other markup alone', function (string 
     'nothing after' => ['<b></b>'],
     'text after' => ['<b></b>tail<p>x</p>'],
     'b inside p' => ['<p><b></b></p>'],
+    'b with a p and text' => ['<b>t<p>x</p></b>'],
+    'b with a p and another element' => ['<b><p>x</p><i>y</i></b>'],
     'whitespace then non-p' => ['<b></b>  <span>x</span>'],
 ]);

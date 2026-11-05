@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Dom\HTMLDocument;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\CollapseBareDoubleBr;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Tests\Fixture;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Transform;
@@ -42,8 +43,7 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
 })->with('fixturePairs');
 
 test('whitespace around a double br run is trimmed and the text nodes are merged', function () {
-    $document = new DOMDocument;
-    $document->loadHTML('<html><body>Foo  <br> <br>  Bar</body></html>');
+    $document = HTMLDocument::createFromString('<html><body>Foo  <br> <br>  Bar</body></html>', LIBXML_NOERROR);
 
     (new CollapseBareDoubleBr)->apply($document);
 
@@ -53,8 +53,7 @@ test('whitespace around a double br run is trimmed and the text nodes are merged
 });
 
 test('a double br run at the start of the body is replaced', function () {
-    $document = new DOMDocument;
-    $document->loadHTML('<html><body><br><br>Bar</body></html>');
+    $document = HTMLDocument::createFromString('<html><body><br><br>Bar</body></html>', LIBXML_NOERROR);
 
     (new CollapseBareDoubleBr)->apply($document);
 

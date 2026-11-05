@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMComment;
-use DOMDocument;
-use DOMNode;
-use DOMXPath;
+use Dom\Comment;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\XPath;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -24,15 +24,15 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class StripHtmlComments implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
         $comments = [];
         foreach (XpathNodes::query($xpath, '//comment()') as $comment) {
             // //comment() yields only comment nodes, so the guard only narrows the type.
             // @pest-mutate-ignore: InstanceOfToTrue
-            if ($comment instanceof DOMComment) {
+            if ($comment instanceof Comment) {
                 $comments[] = $comment;
             }
         }
@@ -41,7 +41,7 @@ final class StripHtmlComments implements Rule
             $parent = $comment->parentNode;
             // A comment found by XPath always has a parent, so the guard only narrows the type.
             // @pest-mutate-ignore: InstanceOfToTrue
-            if ($parent instanceof DOMNode) {
+            if ($parent instanceof Node) {
                 $parent->removeChild($comment);
             }
         }

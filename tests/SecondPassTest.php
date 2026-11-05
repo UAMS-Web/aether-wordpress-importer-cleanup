@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Dom\HTMLDocument;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Tests\Fixture;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Transform;
@@ -117,12 +118,12 @@ function growsUntil(int $target): Rule
          */
         public function __construct(private int $target) {}
 
-        public function apply(DOMDocument $document): void
+        public function apply(HTMLDocument $document): void
         {
             $body = $document->getElementsByTagName('body')->item(0);
 
             if ($body !== null && $document->getElementsByTagName('p')->length < $this->target) {
-                $body->appendChild($document->createElement('p', 'again'));
+                $body->appendChild(Fixture::element($document, 'p', 'again'));
             }
         }
     };
@@ -155,31 +156,13 @@ test('an excerpt dateline is stripped in the first pass, not left for the second
     'hyphen' => ['LITTLE ROCK -'],
 ]);
 
-test('every embed closer is dropped, including the one an older libxml leaves on a nested embed', function (): void {
-    // Older libxml nests a second void embed inside the first, so only the inner closer matched before.
-    $rule = new class implements Rule
-    {
-        public function apply(DOMDocument $document): void
-        {
-            $body = $document->getElementsByTagName('body')->item(0);
+test('a void embed is serialized without a closer, whatever closers the source carries', function (string $html, string $expected): void {
+    // HTML5 serializes embed as a void element, so no closer survives the round trip.
+    $wxr = secondPassWxr($html);
 
-            if ($body?->firstChild === null) {
-                $body?->appendChild($document->createCDATASection('<embed src="a.swf"><embed src="b.swf"></embed></embed>'));
-            }
-        }
-    };
-
-    expect(new Transform([$rule])->apply(secondPassWxr('')))
-        ->toContain('<![CDATA[<embed src="a.swf"><embed src="b.swf">]]>');
-});
-
-test('void embed normalization removes every closer, not only an empty pair', function (string $html, string $expected): void {
-    // Call the step directly: the repeat passes would otherwise hide a left-over closer on a current libxml.
-    $normalize = new ReflectionMethod(Transform::class, 'normalizeVoidEmbeds');
-
-    expect($normalize->invoke(Transform::withDefaultRules(), $html))->toBe($expected);
+    expect(new Transform([])->apply($wxr))->toContain('<![CDATA['.$expected.']]>');
 })->with([
     'empty pair' => ['<embed src="a.swf"></embed>', '<embed src="a.swf">'],
-    'nested embeds' => ['<embed src="a.swf"><embed src="b.swf"></embed></embed>', '<embed src="a.swf"><embed src="b.swf">'],
+    'two embeds' => ['<embed src="a.swf"><embed src="b.swf"></embed></embed>', '<embed src="a.swf"><embed src="b.swf">'],
     'closer with whitespace and case' => ['<embed src="a.swf"></EMBED >', '<embed src="a.swf">'],
 ]);

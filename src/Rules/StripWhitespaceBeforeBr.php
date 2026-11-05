@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMText;
-use DOMXPath;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Text;
+use Dom\XPath;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -27,20 +27,20 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class StripWhitespaceBeforeBr implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
         foreach (XpathNodes::query($xpath, '//br') as $br) {
             // //br yields only elements, so the guard only narrows the type and the continue is unreachable.
             // @pest-mutate-ignore: ContinueToBreak
-            if (! $br instanceof DOMElement) {
+            if (! $br instanceof Element) {
                 continue;
             }
 
             $prev = $br->previousSibling;
             // A <br> directly after an element must be skipped, and later <br> elements must still be processed.
-            if (! $prev instanceof DOMText) {
+            if (! $prev instanceof Text) {
                 continue;
             }
 

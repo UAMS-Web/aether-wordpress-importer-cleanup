@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Dom\HTMLDocument;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\CollapseExtraLineBreaks;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\UnwrapSingleCellTable;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Tests\Fixture;
@@ -51,24 +52,17 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  */
 function unwrapSingleCellTableBody(string $html): string
 {
-    $document = new DOMDocument('1.0', 'UTF-8');
-    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    $document = Fixture::document($html);
 
     (new UnwrapSingleCellTable)->apply($document);
 
-    $out = '';
-    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
-        $out .= $document->saveHTML($child);
-    }
-
-    return $out;
+    return Fixture::bodyHtml($document);
 }
 
 test('unwrap single cell table rewrites matching markup', function (string $html, string $expected) {
     expect(unwrapSingleCellTableBody($html))->toBe($expected);
 })->with([
     'tbody table' => ['<table><tbody><tr><td>a</td></tr></tbody></table>', "\n\n\n\n\n\n\n\na\n\n\n\n\n\n\n\n"],
-    'direct row table' => ['<table><tr><td>a</td></tr></table>', "\n\n\n\n\n\na\n\n\n\n\n\n"],
     'markup in cell' => ['<table><tbody><tr><td><b>a</b> c<br>d</td></tr></tbody></table>', "\n\n\n\n\n\n\n\n<b>a</b> c<br>d\n\n\n\n\n\n\n\n"],
     'empty cell' => ['<table><tbody><tr><td></td></tr></tbody></table>', "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"],
     'attributes kept off' => ['<table class="t" width="9"><tbody><tr><td class="c">a</td></tr></tbody></table>', "\n\n\n\n\n\n\n\na\n\n\n\n\n\n\n\n"],
@@ -83,13 +77,11 @@ test('unwrap single cell table leaves other markup alone', function (string $htm
     expect(unwrapSingleCellTableBody($html))->toBe($html);
 })->with([
     'two tbodies' => ['<table><tbody><tr><td>a</td></tr></tbody><tbody><tr><td>b</td></tr></tbody></table>'],
-    'tbody and direct row' => ['<table><tbody><tr><td>a</td></tr></tbody><tr><td>b</td></tr></table>'],
     'with thead' => ['<table><thead><tr><td>h</td></tr></thead><tbody><tr><td>a</td></tr></tbody></table>'],
     'with tfoot' => ['<table><tbody><tr><td>a</td></tr></tbody><tfoot><tr><td>f</td></tr></tfoot></table>'],
     'thead only' => ['<table><thead><tr><td>h</td></tr></thead></table>'],
     'tfoot only' => ['<table><tfoot><tr><td>f</td></tr></tfoot></table>'],
     'two rows' => ['<table><tbody><tr><td>a</td></tr><tr><td>b</td></tr></tbody></table>'],
-    'two direct rows' => ['<table><tr><td>a</td></tr><tr><td>b</td></tr></table>'],
     'two cells' => ['<table><tbody><tr><td>a</td><td>b</td></tr></tbody></table>'],
     'th cell' => ['<table><tbody><tr><th>a</th></tr></tbody></table>'],
     'no rows' => ['<table><tbody></tbody></table>'],
@@ -98,7 +90,7 @@ test('unwrap single cell table leaves other markup alone', function (string $htm
 ]);
 
 test('unwrap single cell table matches child element names regardless of case', function () {
-    $document = new DOMDocument('1.0', 'UTF-8');
+    $document = HTMLDocument::createEmpty();
     $body = $document->createElement('body');
     $document->appendChild($body);
     $table = $document->createElement('table');
@@ -107,10 +99,10 @@ test('unwrap single cell table matches child element names regardless of case', 
     $table->appendChild($tbody);
     $row = $document->createElement('TR');
     $tbody->appendChild($row);
-    $row->appendChild($document->createElement('TD', 'a'));
+    $row->appendChild(Fixture::element($document, 'TD', 'a'));
 
     (new UnwrapSingleCellTable)->apply($document);
 
     expect($body->getElementsByTagName('table')->length)->toBe(0)
-        ->and(trim($body->textContent))->toBe('a');
+        ->and(trim((string) $body->textContent))->toBe('a');
 });

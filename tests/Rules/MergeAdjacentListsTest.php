@@ -45,14 +45,13 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  * @return string the serialized body of `$html` after the rule has run
  */
 $mergeLists = function (string $html): string {
-    $document = new DOMDocument;
-    $document->loadHTML('<html><body>'.$html.'</body></html>');
+    $document = Fixture::document($html);
 
     (new MergeAdjacentLists)->apply($document);
 
     $body = $document->getElementsByTagName('body')->item(0);
 
-    return (string) $document->saveHTML($body);
+    return $document->saveHtml($body);
 };
 
 test('adjacent unordered and ordered lists each merge', function (string $tag) use ($mergeLists) {

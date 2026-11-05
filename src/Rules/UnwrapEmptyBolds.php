@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMText;
-use DOMXPath;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\Text;
+use Dom\XPath;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -28,13 +29,13 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class UnwrapEmptyBolds implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
         $bolds = [];
         foreach (XpathNodes::query($xpath, '//b') as $element) {
-            if ($element instanceof DOMElement) {
+            if ($element instanceof Element) {
                 $bolds[] = $element;
             }
         }
@@ -47,11 +48,11 @@ final class UnwrapEmptyBolds implements Rule
             $parent = $bold->parentNode;
             // A b element found by XPath always has a parent, so the guard only narrows the type and the continue is unreachable.
             // @pest-mutate-ignore: ContinueToBreak
-            if (! $parent instanceof \DOMNode) {
+            if (! $parent instanceof Node) {
                 continue;
             }
 
-            while ($bold->firstChild instanceof \DOMNode) {
+            while ($bold->firstChild instanceof Node) {
                 $parent->insertBefore($bold->firstChild, $bold);
             }
 
@@ -59,14 +60,14 @@ final class UnwrapEmptyBolds implements Rule
         }
     }
 
-    private function isWhitespaceOnly(DOMElement $element): bool
+    private function isWhitespaceOnly(Element $element): bool
     {
         foreach ($element->childNodes as $child) {
-            if ($child instanceof DOMElement) {
+            if ($child instanceof Element) {
                 return false;
             }
 
-            if ($child instanceof DOMText && trim($child->textContent) !== '') {
+            if ($child instanceof Text && trim((string) $child->textContent) !== '') {
                 return false;
             }
         }

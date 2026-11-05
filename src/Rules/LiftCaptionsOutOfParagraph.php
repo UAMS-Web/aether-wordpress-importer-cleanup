@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMText;
-use DOMXPath;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\Text;
+use Dom\XPath;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -72,13 +72,13 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class LiftCaptionsOutOfParagraph implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
         $candidates = [];
         foreach (XpathNodes::query($xpath, '//p') as $p) {
-            if ($p instanceof DOMElement && $this->paragraphHasBalancedCaptions($p)) {
+            if ($p instanceof Element && $this->paragraphHasBalancedCaptions($p)) {
                 $candidates[] = $p;
             }
         }
@@ -88,16 +88,16 @@ final class LiftCaptionsOutOfParagraph implements Rule
         }
     }
 
-    private function paragraphHasBalancedCaptions(DOMElement $p): bool
+    private function paragraphHasBalancedCaptions(Element $p): bool
     {
-        $text = $p->textContent;
+        $text = (string) $p->textContent;
         $openers = substr_count($text, '[caption');
         $closers = substr_count($text, '[/caption]');
 
         return $openers > 0 && $openers === $closers;
     }
 
-    private function processParagraph(DOMElement $p): void
+    private function processParagraph(Element $p): void
     {
         $chunks = $this->parseChunks($p);
         $chunks = $this->trimAndDropEmptyProse($chunks);
@@ -110,7 +110,7 @@ final class LiftCaptionsOutOfParagraph implements Rule
         // @pest-mutate-ignore: RemoveMethodCall
         if ($chunks === []) {
             $parent = $p->parentNode;
-            if ($parent instanceof DOMNode) {
+            if ($parent instanceof Node) {
                 $parent->removeChild($p);
             }
 
@@ -121,20 +121,20 @@ final class LiftCaptionsOutOfParagraph implements Rule
     }
 
     /**
-     * @return list<array{type: string, nodes: list<DOMNode>}>
+     * @return list<array{type: string, nodes: list<Node>}>
      */
-    private function parseChunks(DOMElement $p): array
+    private function parseChunks(Element $p): array
     {
         $document = $p->ownerDocument;
         // A paragraph taken from a loaded document always has an owner document, so the guard only narrows the type.
         // @pest-mutate-ignore: RemoveEarlyReturn
-        if (! $document instanceof DOMDocument) {
+        if (! $document instanceof HTMLDocument) {
             return [];
         }
 
         $chunks = [];
         $currentType = 'prose';
-        /** @var list<DOMNode> $currentNodes */
+        /** @var list<Node> $currentNodes */
         $currentNodes = [];
         $inCaption = false;
 
@@ -146,7 +146,7 @@ final class LiftCaptionsOutOfParagraph implements Rule
         };
 
         foreach (iterator_to_array($p->childNodes) as $child) {
-            if ($child instanceof DOMText) {
+            if ($child instanceof Text) {
                 $text = $child->nodeValue ?? '';
                 $pos = 0;
                 $len = strlen($text);
@@ -210,8 +210,8 @@ final class LiftCaptionsOutOfParagraph implements Rule
                 continue;
             }
 
-            if ($child instanceof DOMElement) {
-                $tag = strtolower($child->nodeName);
+            if ($child instanceof Element) {
+                $tag = $child->localName;
 
                 if (! $inCaption && $tag === 'br') {
                     $flush();
@@ -237,8 +237,8 @@ final class LiftCaptionsOutOfParagraph implements Rule
     }
 
     /**
-     * @param  list<array{type: string, nodes: list<DOMNode>}>  $chunks
-     * @return list<array{type: string, nodes: list<DOMNode>}>
+     * @param  list<array{type: string, nodes: list<Node>}>  $chunks
+     * @return list<array{type: string, nodes: list<Node>}>
      */
     private function trimAndDropEmptyProse(array $chunks): array
     {
@@ -261,13 +261,13 @@ final class LiftCaptionsOutOfParagraph implements Rule
                 array_pop($nodes);
             }
 
-            if ($nodes !== [] && $nodes[0] instanceof DOMText) {
+            if ($nodes !== [] && $nodes[0] instanceof Text) {
                 $nodes[0]->nodeValue = ltrim($nodes[0]->nodeValue ?? '');
             }
 
             if ($nodes !== []) {
                 $last = $nodes[count($nodes) - 1];
-                if ($last instanceof DOMText) {
+                if ($last instanceof Text) {
                     $last->nodeValue = rtrim($last->nodeValue ?? '');
                 }
             }
@@ -280,25 +280,25 @@ final class LiftCaptionsOutOfParagraph implements Rule
         return $result;
     }
 
-    private function isWhitespaceTextNode(DOMNode $node): bool
+    private function isWhitespaceTextNode(Node $node): bool
     {
-        return $node instanceof DOMText && trim($node->nodeValue ?? '') === '';
+        return $node instanceof Text && trim($node->nodeValue ?? '') === '';
     }
 
     /**
-     * @param  list<array{type: string, nodes: list<DOMNode>}>  $chunks
+     * @param  list<array{type: string, nodes: list<Node>}>  $chunks
      */
-    private function emitChunks(DOMElement $p, array $chunks): void
+    private function emitChunks(Element $p, array $chunks): void
     {
         $document = $p->ownerDocument;
         // A paragraph taken from a loaded document always has an owner document, so the guard only narrows the type.
         // @pest-mutate-ignore: RemoveEarlyReturn
-        if (! $document instanceof DOMDocument) {
+        if (! $document instanceof HTMLDocument) {
             return;
         }
 
         $parent = $p->parentNode;
-        if (! $parent instanceof DOMNode) {
+        if (! $parent instanceof Node) {
             return;
         }
 

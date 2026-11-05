@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMXPath;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\XPath;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -19,13 +20,13 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class RenameItalicsToEm implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
         $italics = [];
         foreach (XpathNodes::query($xpath, '//i') as $element) {
-            if ($element instanceof DOMElement) {
+            if ($element instanceof Element) {
                 $italics[] = $element;
             }
         }
@@ -37,7 +38,7 @@ final class RenameItalicsToEm implements Rule
                 $em->setAttribute($attr->name, $attr->value);
             }
 
-            while ($italic->firstChild instanceof \DOMNode) {
+            while ($italic->firstChild instanceof Node) {
                 $em->appendChild($italic->firstChild);
             }
 

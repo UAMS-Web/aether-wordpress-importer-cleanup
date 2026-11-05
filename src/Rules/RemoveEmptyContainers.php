@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMXPath;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\XPath;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -73,23 +73,23 @@ final class RemoveEmptyContainers implements Rule
         ];
     }
 
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
         $preserved = self::preserved();
 
         do {
             $changed = false;
-            $xpath = new DOMXPath($document);
+            $xpath = new XPath($document);
 
             $candidates = [];
             foreach (XpathNodes::query($xpath, '//*') as $element) {
                 // //* yields only elements, so the guard only narrows the type and the continue is unreachable.
                 // @pest-mutate-ignore: ContinueToBreak
-                if (! $element instanceof DOMElement) {
+                if (! $element instanceof Element) {
                     continue;
                 }
 
-                if (in_array($element->nodeName, $preserved, true)) {
+                if (in_array($element->localName, $preserved, true)) {
                     continue;
                 }
 
@@ -102,7 +102,7 @@ final class RemoveEmptyContainers implements Rule
 
             foreach ($candidates as $element) {
                 $parent = $element->parentNode;
-                if ($parent instanceof DOMNode) {
+                if ($parent instanceof Node) {
                     $parent->removeChild($element);
                     $changed = true;
                 }
@@ -110,9 +110,9 @@ final class RemoveEmptyContainers implements Rule
         } while ($changed);
     }
 
-    private function isEmpty(DOMElement $element): bool
+    private function isEmpty(Element $element): bool
     {
-        if (mb_trim($element->textContent) !== '') {
+        if (mb_trim((string) $element->textContent) !== '') {
             return false;
         }
 

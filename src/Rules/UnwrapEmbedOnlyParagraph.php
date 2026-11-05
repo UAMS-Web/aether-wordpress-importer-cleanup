@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMText;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\Text;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -44,7 +44,7 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
  */
 final class UnwrapEmbedOnlyParagraph implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
         $candidates = [];
         foreach ($document->getElementsByTagName('p') as $p) {
@@ -58,22 +58,22 @@ final class UnwrapEmbedOnlyParagraph implements Rule
         }
     }
 
-    private function qualifies(DOMElement $p): bool
+    private function qualifies(Element $p): bool
     {
         $hasEmbed = false;
 
         foreach ($p->childNodes as $child) {
-            if ($child instanceof DOMElement && strtolower($child->nodeName) === 'embed') {
+            if ($child instanceof Element && $child->localName === 'embed') {
                 $hasEmbed = true;
 
                 continue;
             }
 
-            if ($child instanceof DOMText && trim($child->nodeValue ?? '') === '') {
+            if ($child instanceof Text && trim($child->nodeValue ?? '') === '') {
                 continue;
             }
 
-            if ($child instanceof DOMElement && strtolower($child->nodeName) === 'br') {
+            if ($child instanceof Element && $child->localName === 'br') {
                 continue;
             }
 
@@ -83,20 +83,20 @@ final class UnwrapEmbedOnlyParagraph implements Rule
         return $hasEmbed;
     }
 
-    private function unwrap(DOMElement $p): void
+    private function unwrap(Element $p): void
     {
         $parent = $p->parentNode;
         // A p found by XPath always has a parent, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
         // @pest-mutate-ignore: RemoveEarlyReturn
-        if (! $parent instanceof DOMNode) {
+        if (! $parent instanceof Node) {
             return;
         }
 
         $document = $p->ownerDocument;
         // An element in a document always has an owner document, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
-        if (! $document instanceof DOMDocument) {
+        if (! $document instanceof HTMLDocument) {
             return;
         }
 
@@ -106,7 +106,7 @@ final class UnwrapEmbedOnlyParagraph implements Rule
             // embed, so the type check is redundant; libxml lowercases HTML node names, so strtolower changes nothing.
             // @pest-mutate-ignore: InstanceOfToTrue
             // @pest-mutate-ignore: UnwrapStrtolower
-            if ($child instanceof DOMElement && strtolower($child->nodeName) === 'embed') {
+            if ($child instanceof Element && $child->localName === 'embed') {
                 $embeds[] = $child;
             }
         }

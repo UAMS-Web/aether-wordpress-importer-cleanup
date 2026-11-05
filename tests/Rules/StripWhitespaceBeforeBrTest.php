@@ -46,17 +46,11 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  */
 function stripWhitespaceBeforeBrBody(string $html): string
 {
-    $document = new DOMDocument('1.0', 'UTF-8');
-    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    $document = Fixture::document($html);
 
     (new StripWhitespaceBeforeBr)->apply($document);
 
-    $out = '';
-    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
-        $out .= $document->saveHTML($child);
-    }
-
-    return $out;
+    return Fixture::bodyHtml($document);
 }
 
 test('strip whitespace before br rewrites matching markup', function (string $html, string $expected) {
@@ -75,6 +69,9 @@ test('strip whitespace before br leaves other markup alone', function (string $h
     'after element' => ['<p><b>x</b><br>y</p>'],
     'no space' => ['<p>a<br>b</p>'],
     'leading kept' => ['<p>  a<br>b</p>'],
-    'nbsp kept' => ["<p>a\u{a0}<br>b</p>"],
     'first child br' => ['<p><br>b</p>'],
 ]);
+
+test('strip whitespace before br keeps a non-breaking space, which the serializer writes as an entity', function () {
+    expect(stripWhitespaceBeforeBrBody("<p>a\u{a0}<br>b</p>"))->toBe('<p>a&nbsp;<br>b</p>');
+});

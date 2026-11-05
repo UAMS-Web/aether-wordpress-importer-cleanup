@@ -6,22 +6,22 @@
     <item>
         <title><![CDATA[Leading and trailing whitespace in td trimmed]]></title>
         <link>https://news.uams.edu/2002/sample-bg/</link>
-        <content:encoded><![CDATA[<table><tr><td>Foo</td></tr></table>]]></content:encoded>
+        <content:encoded><![CDATA[<table><tbody><tr><td>Foo</td></tr></tbody></table>]]></content:encoded>
     </item>
     <item>
         <title><![CDATA[Leading and trailing brs in td stripped]]></title>
         <link>https://news.uams.edu/2002/sample-bh/</link>
-        <content:encoded><![CDATA[<table><tr><td>Foo</td></tr></table>]]></content:encoded>
+        <content:encoded><![CDATA[<table><tbody><tr><td>Foo</td></tr></tbody></table>]]></content:encoded>
     </item>
     <item>
         <title><![CDATA[Leading and trailing line breaks in td stripped]]></title>
         <link>https://news.uams.edu/2002/sample-bi/</link>
-        <content:encoded><![CDATA[<table><tr><td>Foo</td></tr></table>]]></content:encoded>
+        <content:encoded><![CDATA[<table><tbody><tr><td>Foo</td></tr></tbody></table>]]></content:encoded>
     </item>
     <item>
         <title><![CDATA[Br in middle of td is preserved]]></title>
         <link>https://news.uams.edu/2002/sample-bj/</link>
-        <content:encoded><![CDATA[<table><tr><td>Foo<br>Bar</td></tr></table>]]></content:encoded>
+        <content:encoded><![CDATA[<table><tbody><tr><td>Foo<br>Bar</td></tr></tbody></table>]]></content:encoded>
     </item>
 </channel>
 </rss>

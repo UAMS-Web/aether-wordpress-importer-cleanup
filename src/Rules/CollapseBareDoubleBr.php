@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMText;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Text;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -27,11 +27,11 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
  */
 final class CollapseBareDoubleBr implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
         $body = $document->getElementsByTagName('body')->item(0);
 
-        if (! $body instanceof DOMElement) {
+        if (! $body instanceof Element) {
             return;
         }
 
@@ -42,7 +42,7 @@ final class CollapseBareDoubleBr implements Rule
 
         while ($i < $count) {
             $child = $children[$i];
-            if (! $child instanceof DOMElement || $child->nodeName !== 'br') {
+            if (! $child instanceof Element || $child->localName !== 'br') {
                 $i++;
 
                 continue;
@@ -54,14 +54,14 @@ final class CollapseBareDoubleBr implements Rule
 
             while ($j < $count) {
                 $next = $children[$j];
-                if ($next instanceof DOMText && mb_trim($next->nodeValue ?? '') === '') {
+                if ($next instanceof Text && mb_trim($next->nodeValue ?? '') === '') {
                     $run[] = $j;
                     $j++;
 
                     continue;
                 }
 
-                if ($next instanceof DOMElement && $next->nodeName === 'br') {
+                if ($next instanceof Element && $next->localName === 'br') {
                     $run[] = $j;
                     $brCount++;
                     $j++;
@@ -79,11 +79,11 @@ final class CollapseBareDoubleBr implements Rule
                 $prev = $firstRunNode->previousSibling;
                 $next = $lastRunNode->nextSibling;
 
-                if ($prev instanceof DOMText) {
+                if ($prev instanceof Text) {
                     $prev->nodeValue = mb_rtrim($prev->nodeValue ?? '');
                 }
 
-                if ($next instanceof DOMText) {
+                if ($next instanceof Text) {
                     $next->nodeValue = mb_ltrim($next->nodeValue ?? '');
                 }
 

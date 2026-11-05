@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMText;
-use DOMXPath;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\Text;
+use Dom\XPath;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -60,15 +60,15 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class UnwrapCaptionOnlyTable implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
         $candidates = [];
         foreach (XpathNodes::query($xpath, '//table') as $table) {
             // //table yields only elements, so the type check only narrows the type.
             // @pest-mutate-ignore: InstanceOfToTrue
-            if ($table instanceof DOMElement && $this->qualifies($table)) {
+            if ($table instanceof Element && $this->qualifies($table)) {
                 $candidates[] = $table;
             }
         }
@@ -78,11 +78,11 @@ final class UnwrapCaptionOnlyTable implements Rule
         }
     }
 
-    private function qualifies(DOMElement $table): bool
+    private function qualifies(Element $table): bool
     {
         $captionCells = 0;
         foreach ($table->getElementsByTagName('td') as $td) {
-            $trimmed = mb_trim($td->textContent);
+            $trimmed = mb_trim((string) $td->textContent);
 
             if ($trimmed === '' && $this->isVisuallyEmpty($td)) {
                 continue;
@@ -116,10 +116,10 @@ final class UnwrapCaptionOnlyTable implements Rule
      * are whitespace here and need no check of their own: a legacy spacer
      * cell.
      */
-    private function isVisuallyEmpty(DOMElement $td): bool
+    private function isVisuallyEmpty(Element $td): bool
     {
         foreach ($td->childNodes as $child) {
-            if ($child instanceof DOMElement && strtolower($child->nodeName) !== 'br') {
+            if ($child instanceof Element && $child->localName !== 'br') {
                 return false;
             }
         }
@@ -127,20 +127,20 @@ final class UnwrapCaptionOnlyTable implements Rule
         return true;
     }
 
-    private function unwrap(DOMElement $table): void
+    private function unwrap(Element $table): void
     {
         $parent = $table->parentNode;
         // A table found by XPath always has a parent, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
         // @pest-mutate-ignore: RemoveEarlyReturn
-        if (! $parent instanceof DOMNode) {
+        if (! $parent instanceof Node) {
             return;
         }
 
         $document = $table->ownerDocument;
         // An element in a document always has an owner document, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
-        if (! $document instanceof DOMDocument) {
+        if (! $document instanceof HTMLDocument) {
             return;
         }
 
@@ -150,14 +150,14 @@ final class UnwrapCaptionOnlyTable implements Rule
         }
 
         foreach ($tds as $td) {
-            if (mb_trim($td->textContent) === '' && $this->isVisuallyEmpty($td)) {
+            if (mb_trim((string) $td->textContent) === '' && $this->isVisuallyEmpty($td)) {
                 continue;
             }
 
             $parent->insertBefore($document->createTextNode("\n"), $table);
-            while ($td->firstChild instanceof DOMNode) {
+            while ($td->firstChild instanceof Node) {
                 $child = $td->firstChild;
-                if ($child instanceof DOMText && mb_trim($child->nodeValue ?? '') === '') {
+                if ($child instanceof Text && mb_trim($child->nodeValue ?? '') === '') {
                     $td->removeChild($child);
 
                     continue;

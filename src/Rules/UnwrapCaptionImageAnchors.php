@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMText;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\Text;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -43,10 +43,10 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
  */
 final class UnwrapCaptionImageAnchors implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
         $body = $document->getElementsByTagName('body')->item(0);
-        if (! $body instanceof DOMElement) {
+        if (! $body instanceof Element) {
             return;
         }
 
@@ -64,11 +64,11 @@ final class UnwrapCaptionImageAnchors implements Rule
      * Depth-first walk. Tracks `$inCaption` as it crosses text-node
      * shortcode markers and collects matching `<a>` elements.
      *
-     * @param  list<DOMElement>  $anchorsToUnwrap
+     * @param  list<Element>  $anchorsToUnwrap
      */
-    private function walk(DOMNode $node, bool &$inCaption, array &$anchorsToUnwrap): void
+    private function walk(Node $node, bool &$inCaption, array &$anchorsToUnwrap): void
     {
-        if ($node instanceof DOMText) {
+        if ($node instanceof Text) {
             $this->updateCaptionState($node->wholeText, $inCaption);
 
             return;
@@ -76,8 +76,8 @@ final class UnwrapCaptionImageAnchors implements Rule
 
         // A comment or other non-element node never has the name a, so the type check is redundant.
         // @pest-mutate-ignore: InstanceOfToTrue
-        if ($node instanceof DOMElement
-            && strtolower($node->nodeName) === 'a'
+        if ($node instanceof Element
+            && $node->localName === 'a'
             && $inCaption
             && $this->onlyMeaningfulChildIsImg($node)
         ) {
@@ -130,16 +130,16 @@ final class UnwrapCaptionImageAnchors implements Rule
      * `<img>`. Whitespace text nodes are tolerated; any other child
      * (more text, another element) disqualifies.
      */
-    private function onlyMeaningfulChildIsImg(DOMElement $anchor): bool
+    private function onlyMeaningfulChildIsImg(Element $anchor): bool
     {
         $foundImg = false;
 
         foreach ($anchor->childNodes as $child) {
-            if ($child instanceof DOMText && mb_trim($child->wholeText) === '') {
+            if ($child instanceof Text && mb_trim($child->wholeText) === '') {
                 continue;
             }
 
-            if ($child instanceof DOMElement && strtolower($child->nodeName) === 'img') {
+            if ($child instanceof Element && $child->localName === 'img') {
                 if ($foundImg) {
                     return false;
                 }
@@ -155,16 +155,16 @@ final class UnwrapCaptionImageAnchors implements Rule
         return $foundImg;
     }
 
-    private function unwrapAnchor(DOMElement $anchor): void
+    private function unwrapAnchor(Element $anchor): void
     {
         $parent = $anchor->parentNode;
         // An anchor found by walking the tree always has a parent, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
-        if (! $parent instanceof DOMNode) {
+        if (! $parent instanceof Node) {
             return;
         }
 
-        while ($anchor->firstChild instanceof DOMNode) {
+        while ($anchor->firstChild instanceof Node) {
             $parent->insertBefore($anchor->firstChild, $anchor);
         }
 

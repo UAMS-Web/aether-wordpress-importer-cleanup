@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMText;
-use DOMXPath;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Text;
+use Dom\XPath;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -56,25 +56,25 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class RestoreSplitCaptionCloser implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
         $candidates = [];
         foreach (XpathNodes::query($xpath, '//p') as $p) {
             // //p yields only elements, so the guard only narrows the type and the continue is unreachable.
             // @pest-mutate-ignore: ContinueToBreak
-            if (! $p instanceof DOMElement) {
+            if (! $p instanceof Element) {
                 continue;
             }
 
             $closerTextNode = $this->leadingCloserTextNode($p);
-            if (! $closerTextNode instanceof DOMText) {
+            if (! $closerTextNode instanceof Text) {
                 continue;
             }
 
             $previousParagraph = $this->previousMeaningfulParagraph($p);
-            if (! $previousParagraph instanceof DOMElement) {
+            if (! $previousParagraph instanceof Element) {
                 continue;
             }
 
@@ -100,11 +100,11 @@ final class RestoreSplitCaptionCloser implements Rule
      * text node itself), iff every preceding child of `$p` is a
      * whitespace-only text node. Otherwise null.
      */
-    private function leadingCloserTextNode(DOMElement $p): ?DOMText
+    private function leadingCloserTextNode(Element $p): ?Text
     {
         foreach ($p->childNodes as $child) {
-            if ($child instanceof DOMText) {
-                $text = $child->textContent;
+            if ($child instanceof Text) {
+                $text = (string) $child->textContent;
                 // Adjacent text nodes merge, so whitespace-only text is never followed by another text node:
                 // the next iteration returns null just as the loop exit would.
                 // @pest-mutate-ignore: ContinueToBreak
@@ -125,34 +125,34 @@ final class RestoreSplitCaptionCloser implements Rule
         return null;
     }
 
-    private function previousMeaningfulParagraph(DOMElement $p): ?DOMElement
+    private function previousMeaningfulParagraph(Element $p): ?Element
     {
         $prev = $p->previousSibling;
-        while ($prev instanceof DOMText && trim($prev->textContent) === '') {
+        while ($prev instanceof Text && trim((string) $prev->textContent) === '') {
             $prev = $prev->previousSibling;
         }
 
         // The HTML parser lowercases element names, so the fold never changes the comparison.
         // @pest-mutate-ignore: UnwrapStrtolower
-        if ($prev instanceof DOMElement && strtolower($prev->nodeName) === 'p') {
+        if ($prev instanceof Element && $prev->localName === 'p') {
             return $prev;
         }
 
         return null;
     }
 
-    private function moveCloser(DOMElement $paragraph, DOMText $closerTextNode, DOMElement $previousParagraph): void
+    private function moveCloser(Element $paragraph, Text $closerTextNode, Element $previousParagraph): void
     {
         $document = $paragraph->ownerDocument;
         // A paragraph taken from a loaded document always has an owner document, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
-        if (! $document instanceof DOMDocument) {
+        if (! $document instanceof HTMLDocument) {
             return;
         }
 
         // Strip `[/caption]` from the leading text node, preserving
         // any leading whitespace inside the same text node.
-        $text = $closerTextNode->textContent;
+        $text = (string) $closerTextNode->textContent;
         $leadingWhitespaceLength = strlen($text) - strlen(ltrim($text));
         $afterCloser = substr($text, $leadingWhitespaceLength + strlen('[/caption]'));
         $closerTextNode->nodeValue = substr($text, 0, $leadingWhitespaceLength).$afterCloser;

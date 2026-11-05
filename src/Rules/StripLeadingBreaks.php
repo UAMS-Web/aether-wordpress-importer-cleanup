@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMText;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\Text;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -24,22 +25,22 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
  */
 final class StripLeadingBreaks implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
         $body = $document->getElementsByTagName('body')->item(0);
 
-        if (! $body instanceof DOMElement) {
+        if (! $body instanceof Element) {
             return;
         }
 
-        while (($first = $body->firstChild) instanceof \DOMNode) {
-            if ($first instanceof DOMText && mb_trim($first->nodeValue ?? '') === '') {
+        while (($first = $body->firstChild) instanceof Node) {
+            if ($first instanceof Text && mb_trim($first->nodeValue ?? '') === '') {
                 $body->removeChild($first);
 
                 continue;
             }
 
-            if ($first instanceof DOMElement && $first->nodeName === 'br') {
+            if ($first instanceof Element && $first->localName === 'br') {
                 $body->removeChild($first);
 
                 continue;

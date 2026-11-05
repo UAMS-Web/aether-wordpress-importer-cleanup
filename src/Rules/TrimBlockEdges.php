@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMText;
-use DOMXPath;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\Text;
+use Dom\XPath;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -36,9 +37,9 @@ final class TrimBlockEdges implements Rule
         return ['p', 'li', 'td', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
     }
 
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
         $query = implode(
             ' | ',
             array_map(static fn (string $tag): string => '//'.$tag, self::blockTags()),
@@ -46,7 +47,7 @@ final class TrimBlockEdges implements Rule
 
         $blocks = [];
         foreach (XpathNodes::query($xpath, $query) as $block) {
-            if ($block instanceof DOMElement) {
+            if ($block instanceof Element) {
                 $blocks[] = $block;
             }
         }
@@ -56,9 +57,9 @@ final class TrimBlockEdges implements Rule
         }
     }
 
-    private function trim(DOMElement $block): void
+    private function trim(Element $block): void
     {
-        while (($first = $block->firstChild) instanceof \DOMNode) {
+        while (($first = $block->firstChild) instanceof Node) {
             if ($this->isStrippable($first)) {
                 $block->removeChild($first);
 
@@ -68,7 +69,7 @@ final class TrimBlockEdges implements Rule
             break;
         }
 
-        while (($last = $block->lastChild) instanceof \DOMNode) {
+        while (($last = $block->lastChild) instanceof Node) {
             if ($this->isStrippable($last)) {
                 $block->removeChild($last);
 
@@ -79,22 +80,22 @@ final class TrimBlockEdges implements Rule
         }
 
         $first = $block->firstChild;
-        if ($first instanceof DOMText) {
+        if ($first instanceof Text) {
             $first->nodeValue = mb_ltrim($first->nodeValue ?? '');
         }
 
         $last = $block->lastChild;
-        if ($last instanceof DOMText) {
+        if ($last instanceof Text) {
             $last->nodeValue = mb_rtrim($last->nodeValue ?? '');
         }
     }
 
-    private function isStrippable(\DOMNode $node): bool
+    private function isStrippable(Node $node): bool
     {
-        if ($node instanceof DOMText && mb_trim($node->nodeValue ?? '') === '') {
+        if ($node instanceof Text && mb_trim($node->nodeValue ?? '') === '') {
             return true;
         }
 
-        return $node instanceof DOMElement && $node->nodeName === 'br';
+        return $node instanceof Element && $node->localName === 'br';
     }
 }

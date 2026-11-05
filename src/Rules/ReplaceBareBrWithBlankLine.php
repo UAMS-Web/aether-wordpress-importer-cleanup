@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -34,16 +34,16 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
  */
 final class ReplaceBareBrWithBlankLine implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
         $body = $document->getElementsByTagName('body')->item(0);
-        if (! $body instanceof DOMElement) {
+        if (! $body instanceof Element) {
             return;
         }
 
         $brs = [];
         foreach ($body->childNodes as $child) {
-            if ($child instanceof DOMElement && strtolower($child->nodeName) === 'br') {
+            if ($child instanceof Element && $child->localName === 'br') {
                 $brs[] = $child;
             }
         }
@@ -52,7 +52,7 @@ final class ReplaceBareBrWithBlankLine implements Rule
             $parent = $br->parentNode;
             // A child of the body always has a parent, so the guard only narrows the type.
             // @pest-mutate-ignore: ContinueToBreak
-            if (! $parent instanceof DOMNode) {
+            if (! $parent instanceof Node) {
                 continue;
             }
 

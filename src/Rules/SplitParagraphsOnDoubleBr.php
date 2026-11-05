@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMText;
-use DOMXPath;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\Text;
+use Dom\XPath;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -40,13 +40,13 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class SplitParagraphsOnDoubleBr implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
         $paragraphs = [];
         foreach (XpathNodes::query($xpath, '//p') as $element) {
-            if ($element instanceof DOMElement) {
+            if ($element instanceof Element) {
                 $paragraphs[] = $element;
             }
         }
@@ -56,13 +56,13 @@ final class SplitParagraphsOnDoubleBr implements Rule
         }
     }
 
-    private function splitParagraph(DOMDocument $document, DOMElement $paragraph): void
+    private function splitParagraph(HTMLDocument $document, Element $paragraph): void
     {
-        /** @var list<DOMNode> $children */
+        /** @var list<Node> $children */
         $children = iterator_to_array($paragraph->childNodes);
         $count = count($children);
 
-        /** @var list<list<DOMNode>> $groups */
+        /** @var list<list<Node>> $groups */
         $groups = [];
         $currentGroup = [];
 
@@ -98,7 +98,7 @@ final class SplitParagraphsOnDoubleBr implements Rule
         }
 
         $parent = $paragraph->parentNode;
-        if (! $parent instanceof DOMNode) {
+        if (! $parent instanceof Node) {
             return;
         }
 
@@ -135,8 +135,8 @@ final class SplitParagraphsOnDoubleBr implements Rule
      * — so a group that starts with "\nSecond sentence." becomes simply
      * "Second sentence." once promoted into its own paragraph.
      *
-     * @param  list<DOMNode>  $group
-     * @return list<DOMNode>
+     * @param  list<Node>  $group
+     * @return list<Node>
      */
     private function trimWhitespaceEnds(array $group): array
     {
@@ -148,26 +148,26 @@ final class SplitParagraphsOnDoubleBr implements Rule
             array_pop($group);
         }
 
-        if ($group !== [] && $group[0] instanceof DOMText) {
-            $group[0]->nodeValue = ltrim($group[0]->textContent);
+        if ($group !== [] && $group[0] instanceof Text) {
+            $group[0]->nodeValue = ltrim((string) $group[0]->textContent);
         }
 
-        if ($group !== [] && $group[array_key_last($group)] instanceof DOMText) {
+        if ($group !== [] && $group[array_key_last($group)] instanceof Text) {
             $last = $group[array_key_last($group)];
-            $last->nodeValue = rtrim($last->textContent);
+            $last->nodeValue = rtrim((string) $last->textContent);
         }
 
         return $group;
     }
 
-    private function isBrElement(?DOMNode $node): bool
+    private function isBrElement(?Node $node): bool
     {
-        return $node instanceof DOMElement && $node->nodeName === 'br';
+        return $node instanceof Element && $node->localName === 'br';
     }
 
-    private function isWhitespaceText(?DOMNode $node): bool
+    private function isWhitespaceText(?Node $node): bool
     {
-        return $node instanceof DOMText && trim($node->textContent) === '';
+        return $node instanceof Text && trim((string) $node->textContent) === '';
     }
 
     /**
@@ -176,7 +176,7 @@ final class SplitParagraphsOnDoubleBr implements Rule
      * index of the last `<br>` in the run and whether the run had two or
      * more `<br>`s.
      *
-     * @param  list<DOMNode>  $children
+     * @param  list<Node>  $children
      * @return array{int, bool}
      */
     private function scanBrRange(array $children, int $start): array

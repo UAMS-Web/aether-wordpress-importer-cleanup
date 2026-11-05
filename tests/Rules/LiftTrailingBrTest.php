@@ -1,6 +1,8 @@
 <?php
 
 declare(strict_types=1);
+use Dom\Element;
+use Dom\HTMLDocument;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\LiftTrailingBr;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Tests\Fixture;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Transform;
@@ -42,8 +44,9 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
 })->with('fixturePairs');
 
 test('a trailing br is not lifted out of a skipped parent', function (string $tag) {
-    $document = new DOMDocument;
-    $document->loadHTML("<html><body><div><{$tag}>x<br></{$tag}></div></body></html>");
+    // HTML5 drops a cell outside a table, so give td the table it needs.
+    $markup = $tag === 'td' ? '<table><tbody><tr><td>x<br></td></tr></tbody></table>' : "<div><{$tag}>x<br></{$tag}></div>";
+    $document = Fixture::document($markup);
 
     (new LiftTrailingBr)->apply($document);
 
@@ -52,19 +55,18 @@ test('a trailing br is not lifted out of a skipped parent', function (string $ta
 })->with(['p', 'li', 'td', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
 
 test('whitespace after a lifted br is dropped from the old parent', function () {
-    $document = new DOMDocument;
-    $document->loadHTML("<html><body><div><b>foo<br>  \n </b>x</div></body></html>");
+    $document = HTMLDocument::createFromString("<html><body><div><b>foo<br>  \n </b>x</div></body></html>", LIBXML_NOERROR);
 
     (new LiftTrailingBr)->apply($document);
 
     $bold = $document->getElementsByTagName('b')->item(0);
     expect($bold?->textContent)->toBe('foo')
-        ->and($bold?->nextSibling?->nodeName)->toBe('br');
+        ->and($bold?->nextSibling)->toBeInstanceOf(Element::class)
+        ->and($bold?->nextSibling instanceof Element ? $bold->nextSibling->localName : null)->toBe('br');
 });
 
 test('a trailing br in the body is not lifted out of it', function () {
-    $document = new DOMDocument;
-    $document->loadHTML('<html><body>x<br></body></html>');
+    $document = HTMLDocument::createFromString('<html><body>x<br></body></html>', LIBXML_NOERROR);
 
     (new LiftTrailingBr)->apply($document);
 

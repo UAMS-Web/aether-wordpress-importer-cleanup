@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Dom\HTMLDocument;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\NormalizeCityDateline;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Tests\Fixture;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Transform;
@@ -46,17 +47,11 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  */
 function normalizeCityDatelineBody(string $html): string
 {
-    $document = new DOMDocument('1.0', 'UTF-8');
-    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    $document = Fixture::document($html);
 
     (new NormalizeCityDateline)->apply($document);
 
-    $out = '';
-    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
-        $out .= $document->saveHTML($child);
-    }
-
-    return $out;
+    return Fixture::bodyHtml($document);
 }
 
 test('normalize city dateline rewrites matching markup', function (string $html, string $expected) {
@@ -125,12 +120,10 @@ test('normalize city dateline leaves other markup alone', function (string $html
 ]);
 
 test('normalize city dateline matches only the cities it is given', function () {
-    $document = new DOMDocument('1.0', 'UTF-8');
-    $document->loadHTML('<?xml encoding="UTF-8"?><body>FOO - one</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    $document = HTMLDocument::createFromString('<body>FOO - one</body>', LIBXML_NOERROR);
     (new NormalizeCityDateline(['FOO']))->apply($document);
 
-    $other = new DOMDocument('1.0', 'UTF-8');
-    $other->loadHTML('<?xml encoding="UTF-8"?><body>LITTLE ROCK - one</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    $other = HTMLDocument::createFromString('<body>LITTLE ROCK - one</body>', LIBXML_NOERROR);
     (new NormalizeCityDateline(['FOO']))->apply($other);
 
     expect($document->getElementsByTagName('body')->item(0)?->textContent)->toBe("FOO, Ark. \u{2014} one")
@@ -138,7 +131,7 @@ test('normalize city dateline matches only the cities it is given', function () 
 });
 
 test('normalize city dateline ignores a document without a body', function () {
-    $document = new DOMDocument;
+    $document = HTMLDocument::createEmpty();
 
     (new NormalizeCityDateline)->apply($document);
 
