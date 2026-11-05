@@ -5,3 +5,4 @@
 *.{sh,bash} text eol=lf
 
 *.{png,gif,jpg,jpeg,webp,ico,pdf,zip} -text
+docs/DECISIONS.md merge=union

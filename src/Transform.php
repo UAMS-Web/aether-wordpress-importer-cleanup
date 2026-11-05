@@ -8,6 +8,7 @@ use DOMDocument;
 use DOMNode;
 use DOMXPath;
 use InvalidArgumentException;
+use RuntimeException;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\AddMissingCaptionAttributes;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\CaptionizeImageCutline;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\CollapseBareDoubleBr;
@@ -76,6 +77,11 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\UnwrapWholeContentTable;
  */
 final class Transform
 {
+    /**
+     * Upper bound on repeated pipeline passes over one body.
+     */
+    private const int MAX_PASSES = 5;
+
     /**
      * @param  list<Rule>  $rules
      */
@@ -207,7 +213,7 @@ final class Transform
         // Native whole-document serialization returns a string on this public path.
         // @pest-mutate-ignore:FalseToTrue
         if ($saved === false) {
-            throw new \RuntimeException('Failed to serialize WXR document.');
+            throw new RuntimeException('Failed to serialize WXR document.');
         }
 
         // libxml emits CRLF on Windows; normalize so output matches LF fixtures and
@@ -221,7 +227,7 @@ final class Transform
      */
     private function processContent(DOMDocument $document, DOMNode $node): void
     {
-        $cleaned = $this->applyToHtml($node->textContent);
+        $cleaned = $this->settle(fn (string $text): string => $this->applyToHtml($text), $node->textContent);
 
         $this->replaceCdata($document, $node, $cleaned);
     }
@@ -241,15 +247,24 @@ final class Transform
      */
     private function processTitle(DOMDocument $document, DOMNode $node): void
     {
-        $cleaned = $this->applyToHtml($node->textContent);
+        $cleaned = $this->settle(fn (string $text): string => $this->titleText($text), $node->textContent);
+
+        $this->replaceCdata($document, $node, $cleaned);
+    }
+
+    /**
+     * One title pass: run the rules, then reduce the result to plain single-line text.
+     */
+    private function titleText(string $title): string
+    {
+        $cleaned = $this->applyToHtml($title);
 
         $cleaned = (string) preg_replace('/<br\b[^>]*>/i', ' ', $cleaned);
         $cleaned = str_replace(["\r\n", "\n", "\r"], ' ', $cleaned);
         $cleaned = strip_tags($cleaned);
         $cleaned = (string) preg_replace('/ {2,}/', ' ', $cleaned);
-        $cleaned = mb_trim($cleaned);
 
-        $this->replaceCdata($document, $node, $cleaned);
+        return mb_trim($cleaned);
     }
 
     /**
@@ -264,12 +279,21 @@ final class Transform
      */
     private function processExcerpt(DOMDocument $document, DOMNode $node): void
     {
-        $html = html_entity_decode($node->textContent, ENT_QUOTES | ENT_HTML5);
-        $cleaned = $this->applyToHtml($html);
-        $plainText = mb_trim(strip_tags($cleaned));
-        $plainText = $this->stripLeadingCityDateline($plainText);
+        $plainText = $this->settle(fn (string $text): string => $this->excerptText($text), $node->textContent);
 
         $this->replaceCdata($document, $node, $plainText);
+    }
+
+    /**
+     * One excerpt pass: decode, run the rules, reduce to plain text, strip the dateline.
+     */
+    private function excerptText(string $excerpt): string
+    {
+        $html = html_entity_decode($excerpt, ENT_QUOTES | ENT_HTML5);
+        $cleaned = $this->applyToHtml($html);
+        $plainText = mb_trim(strip_tags($cleaned));
+
+        return $this->stripLeadingCityDateline($plainText);
     }
 
     /**
@@ -306,11 +330,20 @@ final class Transform
      */
     private function processSummaryMeta(DOMDocument $document, DOMNode $node): void
     {
-        $html = html_entity_decode($node->textContent, ENT_QUOTES | ENT_HTML5);
-        $cleaned = $this->applyToHtml($html);
-        $reEncoded = str_replace(['<', '>'], ['&lt;', '&gt;'], $cleaned);
+        $reEncoded = $this->settle(fn (string $text): string => $this->summaryText($text), $node->textContent);
 
         $this->replaceCdata($document, $node, $reEncoded);
+    }
+
+    /**
+     * One summary pass: decode, run the rules, re-encode the angle brackets.
+     */
+    private function summaryText(string $summary): string
+    {
+        $html = html_entity_decode($summary, ENT_QUOTES | ENT_HTML5);
+        $cleaned = $this->applyToHtml($html);
+
+        return str_replace(['<', '>'], ['&lt;', '&gt;'], $cleaned);
     }
 
     /**
@@ -324,6 +357,40 @@ final class Transform
         }
 
         $node->appendChild($document->createCDATASection($content));
+    }
+
+    /**
+     * Repeat one cleanup pass over its own output until a pass changes nothing.
+     *
+     * One pass is not a fixed point: a rule can expose structure only a later pass lets an
+     * earlier rule act on (an unwrapped table whose dateline is then stripped, adjacent lists
+     * merged, a cutline captioned, a city dateline normalized and then stripped from an
+     * excerpt). Feeding a field's output back through the same pass until nothing changes
+     * makes a second run over cleaned output a no-op by construction. Every field in the
+     * news.uams.edu exports settles after one repeat.
+     *
+     * @param  callable(string): string  $pass  One full cleanup of a field's text
+     *
+     * @throws RuntimeException When the output is still changing after MAX_PASSES passes
+     */
+    private function settle(callable $pass, string $text): string
+    {
+        $current = $pass($text);
+
+        for ($count = 2; $count <= self::MAX_PASSES; $count++) {
+            $next = $pass($current);
+
+            if ($next === $current) {
+                return $current;
+            }
+
+            $current = $next;
+        }
+
+        throw new RuntimeException(sprintf(
+            "Cleanup rules did not settle after %d passes; a rule keeps undoing another rule's work.",
+            self::MAX_PASSES,
+        ));
     }
 
     /**
