@@ -40,6 +40,8 @@ final class RedirectPairs
                     continue;
                 }
 
+                // Membership uses isset, which also recognizes a false value.
+                // @pest-mutate-ignore:TrueToFalse
                 $seen[$source] = true;
                 $pairs[] = [
                     'source' => $source,
@@ -55,6 +57,8 @@ final class RedirectPairs
             // row carries no source post id for a dropped-target check to match.
             $oldSource = $disposition->permalink($keep['date'], $keep['slug']);
             if ($oldSource !== $target && ! isset($seen[$oldSource])) {
+                // Membership uses isset, which also recognizes a false value.
+                // @pest-mutate-ignore:TrueToFalse
                 $seen[$oldSource] = true;
                 $pairs[] = [
                     'source' => $oldSource,

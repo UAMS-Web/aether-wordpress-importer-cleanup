@@ -58,6 +58,9 @@ final class WxrPosts
     public static function wordCount(string $html): int
     {
         $text = (string) preg_replace('/<[^>]+>/', ' ', $html);
+        // Limits -2, -1 and 0 all request unlimited splitting.
+        // @pest-mutate-ignore:DecrementInteger
+        // @pest-mutate-ignore:IncrementInteger
         $words = preg_split('/\s+/u', mb_trim($text), -1, PREG_SPLIT_NO_EMPTY);
 
         return $words === false ? 0 : \count($words);
@@ -104,6 +107,8 @@ final class WxrPosts
             }
 
             $cdata = strpos($contents, '<![CDATA[', $cursor);
+            // Different opening bytes make the two successful offsets unequal.
+            // @pest-mutate-ignore:GreaterToGreaterOrEqual
             if ($cdata === false || $cdata > $close) {
                 return [$start, $close + \strlen('</item>')];
             }
@@ -113,6 +118,8 @@ final class WxrPosts
                 return null;
             }
 
+            // Neither searched marker can start in the last three bytes or in ]]>.
+            // @pest-mutate-ignore:PlusToMinus
             $cursor = $cdataEnd + \strlen(']]>');
         }
     }
@@ -124,10 +131,16 @@ final class WxrPosts
     {
         $quoted = preg_quote($name, '/');
 
+        // Failed matches leave no captures; the final expression also returns ''.
+        // @pest-mutate-ignore:RemoveEarlyReturn
         if (preg_match('/<'.$quoted.'>(?:<!\[CDATA\[(.*?)\]\]>|(.*?))<\/'.$quoted.'>/s', $item, $match) !== 1) {
             return '';
         }
 
-        return ($match[1] ?? '') !== '' ? $match[1] : ($match[2] ?? '');
+        return (
+            // Capture 1 exists on every success, including the plain-text branch.
+            // @pest-mutate-ignore:EmptyStringToNotEmpty
+            $match[1] ?? ''
+        ) !== '' ? $match[1] : ($match[2] ?? '');
     }
 }

@@ -16,7 +16,7 @@ function newsDisposition(): DuplicateDisposition
     return DuplicateDisposition::fromFile(dirname(__DIR__, 2).'/dispositions/news-uams-edu.json');
 }
 
-test('the news disposition is valid and holds the 140 sets #798 records', function () {
+test('the news disposition is valid and holds the 140 sets #798 records', function (): void {
     $disposition = newsDisposition();
 
     expect($disposition->site)->toBe('news.uams.edu');
@@ -24,13 +24,13 @@ test('the news disposition is valid and holds the 140 sets #798 records', functi
     expect(array_sum(array_map(fn (array $set): int => \count($set['drop']), $disposition->sets)))->toBe(150);
 });
 
-test('the committed redirect pairs are exactly what the disposition implies', function () {
+test('the committed redirect pairs are exactly what the disposition implies', function (): void {
     $committed = file_get_contents(dirname(__DIR__, 2).'/dispositions/news-uams-edu.redirects.json');
 
     expect($committed)->toBe(RedirectPairs::toJson(newsDisposition()));
 });
 
-test('no redirect target is itself a redirect source, and no source repeats', function () {
+test('no redirect target is itself a redirect source, and no source repeats', function (): void {
     $pairs = RedirectPairs::from(newsDisposition());
     $sources = array_column($pairs, 'source');
 
@@ -41,7 +41,7 @@ test('no redirect target is itself a redirect source, and no source repeats', fu
 // Only the member half of the URL rule can be checked here: whether a published post elsewhere
 // holds the unsuffixed slug needs the export, which is not in this repository. The finder tests
 // cover that half, and the build was checked against the export (#798).
-test('a canonical slug keeps a -N only when no member holds the unsuffixed slug', function () {
+test('a canonical slug keeps a -N only when no member holds the unsuffixed slug', function (): void {
     foreach (newsDisposition()->sets as $set) {
         if (preg_match('/^(.*)-\d+$/', $set['canonical_slug'], $match) !== 1) {
             continue;

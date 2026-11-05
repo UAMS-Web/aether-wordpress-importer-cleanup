@@ -62,6 +62,8 @@ final class ApplyDuplicateDisposition
                 $this->assertSlug($item, $postId, [$drops[$postId]]);
                 // Remove the item's whole line: the indentation before it and the newline after.
                 $lineStart = $start;
+                // A one-byte string equals a space or tab identically in either mode.
+                // @pest-mutate-ignore:TrueToFalse
                 while ($lineStart > $offset && \in_array($wxr[$lineStart - 1], [' ', "\t"], true)) {
                     $lineStart--;
                 }
@@ -69,6 +71,8 @@ final class ApplyDuplicateDisposition
                 $output .= substr($wxr, $offset, $lineStart - $offset);
                 $offset = match (true) {
                     substr($wxr, $end, 2) === "\r\n" => $end + 2,
+                    // Either non-newline default selects the unchanged end offset.
+                    // @pest-mutate-ignore:EmptyStringToNotEmpty
                     ($wxr[$end] ?? '') === "\n" => $end + 1,
                     default => $end,
                 };
@@ -141,6 +145,8 @@ final class ApplyDuplicateDisposition
             $count,
         );
 
+        // The matched slug guarantees one replacement, or a PCRE error gives null and zero.
+        // @pest-mutate-ignore:BooleanOrToBooleanAnd
         if ($replaced === null || $count !== 1) {
             throw new RuntimeException("Could not rewrite a kept post's <wp:post_name>.");
         }
@@ -154,10 +160,16 @@ final class ApplyDuplicateDisposition
     private static function field(string $item, string $name): ?string
     {
         $quoted = preg_quote($name, '/');
+        // Callers treat null and the empty fallback identically for an absent field.
+        // @pest-mutate-ignore:RemoveEarlyReturn
         if (preg_match('/<'.$quoted.'>(?:<!\[CDATA\[(.*?)\]\]>|([^<]*))<\/'.$quoted.'>/s', $item, $match) !== 1) {
             return null;
         }
 
-        return ($match[1] ?? '') !== '' ? $match[1] : ($match[2] ?? '');
+        return (
+            // Every successful alternative populates capture 1, even when empty.
+            // @pest-mutate-ignore:EmptyStringToNotEmpty
+            $match[1] ?? ''
+        ) !== '' ? $match[1] : ($match[2] ?? '');
     }
 }
