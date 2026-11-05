@@ -1,0 +1,8 @@
+{
+    "bands": {
+        "suite": {
+            "expected": 0,
+            "why": "The complete suite uses committed local fixtures and skips no tests."
+        }
+    }
+}
