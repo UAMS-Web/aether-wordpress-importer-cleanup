@@ -115,6 +115,9 @@ final class UnwrapCaptionOnlyTable implements Rule
      * have already checked that the cell's text is blank, so text children
      * are whitespace here and need no check of their own: a legacy spacer
      * cell.
+     *
+     * Control branch for UAMS-Web/aether-wordpress-importer-cleanup#43: this
+     * comment only puts the file in the pull request's changed set.
      */
     private function isVisuallyEmpty(DOMElement $td): bool
     {
