@@ -50,6 +50,10 @@ $cleaned = Transform::withDefaultRules()->apply($wxr);
 
 `Transform::withDefaultRules()` runs the same pipeline as the CLI. The rule order is defined once, in `Transform::defaultRules()`, and the CLI, the full-pipeline test and any library consumer all use it. `DefaultRulesTest` pins that order and fails if a rule class in `src/Rules/` is left out of it.
 
+### Running it twice changes nothing
+
+Each field (content, title, excerpt, `_uams_summary`) is cleaned again over its own output until a pass changes nothing, so a second run over cleaned output is a no-op. A rule can expose structure that only a later pass lets an earlier rule act on, such as a layout table unwrapped before its dateline can be stripped, and the repeat resolves that inside the first run. If a field is still changing after 5 passes, a rule is undoing another rule's work, and `wxr-cleanup` stops with an error naming the cap instead of writing a half-settled body. The reasoning is in [`docs/DECISIONS.md`](docs/DECISIONS.md).
+
 ## Duplicate dispositions
 
 Some sites carry the same story more than once, under a hyphenated slug and a concatenated or `-N` slug. A **disposition** names, for each such set, the one post to keep and the posts to drop. Pass it to drop the duplicates before the body rules run:

@@ -92,11 +92,18 @@ test('apply decodes HTML5 entities and attribute quotes before excerpt and summa
     // Require quote decoding before parsing an otherwise unquoted attribute.
     $rule = new class implements Rule
     {
+        public int $calls = 0;
+
         public function apply(DOMDocument $document): void
         {
             // Require the documented synthetic root without an implied DTD.
             expect($document->doctype)->toBeNull();
             expect($document->documentElement?->nodeName)->toBe('body');
+
+            // Only the first pass sees the decoded markup; a repeat pass sees its plain-text output.
+            if ($this->calls++ > 0) {
+                return;
+            }
 
             // Observe the exact HTML handed to the configured rules.
             $paragraph = $document->getElementsByTagName('p')->item(0);
@@ -115,7 +122,8 @@ test('apply decodes HTML5 entities and attribute quotes before excerpt and summa
 
     // Confirm the field-specific serialization after the rule has observed decoding.
     $actual = new Transform([$rule])->apply($wxr);
-    expect($actual)->toContain($element === 'excerpt'
+    expect($rule->calls)->toBeGreaterThan(0)
+        ->and($actual)->toContain($element === 'excerpt'
         ? '<excerpt:encoded><![CDATA[\'quoted\' "double" :]]></excerpt:encoded>'
         : '<wp:meta_value><![CDATA[&lt;p title="two words"&gt;\'quoted\' "double" :&lt;/p&gt;]]></wp:meta_value>');
 })->with(['excerpt', 'summary']);
@@ -152,9 +160,11 @@ test('apply normalizes carriage returns introduced by configured rules', functio
         public function apply(DOMDocument $document): void
         {
             // Add a literal line ending for the outer serializer to normalize.
-            $document->getElementsByTagName('body')->item(0)?->appendChild(
-                $document->createTextNode('first'.$this->newline.'second')
-            );
+            $body = $document->getElementsByTagName('body')->item(0);
+            // Only fill an empty body, so repeated pipeline passes settle.
+            if ($body?->firstChild === null) {
+                $body?->appendChild($document->createTextNode('first'.$this->newline.'second'));
+            }
         }
     };
     $wxr = '<rss xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><item><content:encoded/></item></channel></rss>';
@@ -175,9 +185,11 @@ test('apply reduces title line endings to single spaces', function (string $newl
 
         public function apply(DOMDocument $document): void
         {
-            $document->getElementsByTagName('body')->item(0)?->appendChild(
-                $document->createTextNode('first'.$this->newline.'second')
-            );
+            $body = $document->getElementsByTagName('body')->item(0);
+            // Only fill an empty body, so repeated pipeline passes settle.
+            if ($body?->firstChild === null) {
+                $body?->appendChild($document->createTextNode('first'.$this->newline.'second'));
+            }
         }
     };
 
@@ -237,9 +249,11 @@ test('apply handles PCRE exhaustion after a custom rule has produced a fragment'
 
         public function apply(DOMDocument $document): void
         {
-            $document->getElementsByTagName('body')->item(0)?->appendChild(
-                $document->createCDATASection($this->fragment)
-            );
+            $body = $document->getElementsByTagName('body')->item(0);
+            // Only fill an empty body, so repeated pipeline passes settle.
+            if ($body?->firstChild === null) {
+                $body?->appendChild($document->createCDATASection($this->fragment));
+            }
             ini_set('pcre.backtrack_limit', '0');
         }
     };
