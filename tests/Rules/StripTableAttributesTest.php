@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Dom\HTMLDocument;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\StripTableAttributes;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Tests\Fixture;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Transform;
@@ -46,17 +47,11 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  */
 function stripTableAttributesBody(string $html): string
 {
-    $document = new DOMDocument('1.0', 'UTF-8');
-    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    $document = Fixture::document($html);
 
     (new StripTableAttributes)->apply($document);
 
-    $out = '';
-    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
-        $out .= $document->saveHTML($child);
-    }
-
-    return $out;
+    return Fixture::bodyHtml($document);
 }
 
 test('strip table attributes rewrites matching markup', function (string $html, string $expected) {
@@ -85,11 +80,10 @@ test('strip table attributes leaves other markup alone', function (string $html)
 ]);
 
 test('strip table attributes uses a custom attribute map', function () {
-    $document = new DOMDocument('1.0', 'UTF-8');
-    $document->loadHTML('<?xml encoding="UTF-8"?><body><p class="a" id="b">x</p><table width="1"><tbody><tr><td>y</td></tr></tbody></table></body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    $document = HTMLDocument::createFromString('<body><p class="a" id="b">x</p><table width="1"><tbody><tr><td>y</td></tr></tbody></table></body>', LIBXML_NOERROR);
 
     (new StripTableAttributes(['p' => ['class']]))->apply($document);
 
-    expect($document->saveHTML($document->getElementsByTagName('p')->item(0)))->toBe('<p id="b">x</p>')
-        ->and($document->saveHTML($document->getElementsByTagName('table')->item(0)))->toContain('width="1"');
+    expect($document->saveHtml($document->getElementsByTagName('p')->item(0)))->toBe('<p id="b">x</p>')
+        ->and($document->saveHtml($document->getElementsByTagName('table')->item(0)))->toContain('width="1"');
 });

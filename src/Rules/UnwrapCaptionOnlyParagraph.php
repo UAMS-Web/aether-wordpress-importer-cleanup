@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMXPath;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\XPath;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -53,15 +54,15 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class UnwrapCaptionOnlyParagraph implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
         $paragraphs = [];
         foreach (XpathNodes::query($xpath, '//p') as $p) {
             // //p yields only elements, so the type check only narrows the type.
             // @pest-mutate-ignore: InstanceOfToTrue
-            if ($p instanceof DOMElement && $this->isCaptionOnlyParagraph($p)) {
+            if ($p instanceof Element && $this->isCaptionOnlyParagraph($p)) {
                 $paragraphs[] = $p;
             }
         }
@@ -71,9 +72,9 @@ final class UnwrapCaptionOnlyParagraph implements Rule
         }
     }
 
-    private function isCaptionOnlyParagraph(DOMElement $p): bool
+    private function isCaptionOnlyParagraph(Element $p): bool
     {
-        $text = mb_trim($p->textContent);
+        $text = mb_trim(NodeText::content($p));
 
         if (! str_starts_with($text, '[caption')) {
             return false;
@@ -92,26 +93,26 @@ final class UnwrapCaptionOnlyParagraph implements Rule
         return substr_count($text, '[/caption]') === 1;
     }
 
-    private function unwrapElement(DOMElement $element): void
+    private function unwrapElement(Element $element): void
     {
         $parent = $element->parentNode;
         // A p found by XPath always has a parent, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
         // @pest-mutate-ignore: RemoveEarlyReturn
-        if (! $parent instanceof DOMNode) {
+        if (! $parent instanceof Node) {
             return;
         }
 
         $document = $element->ownerDocument;
         // An element in a document always has an owner document, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
-        if (! $document instanceof DOMDocument) {
+        if (! $document instanceof HTMLDocument) {
             return;
         }
 
         $parent->insertBefore($document->createTextNode("\n\n"), $element);
 
-        while ($element->firstChild instanceof DOMNode) {
+        while ($element->firstChild instanceof Node) {
             $parent->insertBefore($element->firstChild, $element);
         }
 

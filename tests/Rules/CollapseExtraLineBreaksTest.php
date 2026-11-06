@@ -40,3 +40,14 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
 
     expect($actualAfter)->toBe($expectedAfter);
 })->with('fixturePairs');
+
+test('collapse extra line breaks merges adjacent text nodes before collapsing', function () {
+    $document = Fixture::document('');
+    $body = Fixture::first($document, 'body');
+    $body->appendChild($document->createTextNode("a\n\n"));
+    $body->appendChild($document->createTextNode("\n\nb"));
+
+    (new CollapseExtraLineBreaks)->apply($document);
+
+    expect(Fixture::bodyHtml($document))->toBe("a\n\nb");
+});

@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMText;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\Text;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -45,10 +46,10 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
  */
 final class CollapseCaptionInternalWhitespace implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
         $body = $document->getElementsByTagName('body')->item(0);
-        if (! $body instanceof DOMElement) {
+        if (! $body instanceof Element) {
             return;
         }
 
@@ -61,7 +62,7 @@ final class CollapseCaptionInternalWhitespace implements Rule
             // A br collected from the walk always has a parent, so the guard only narrows the type.
             // @pest-mutate-ignore: InstanceOfToTrue
             // @pest-mutate-ignore: ContinueToBreak
-            if (! $parent instanceof DOMNode) {
+            if (! $parent instanceof Node) {
                 continue;
             }
 
@@ -75,52 +76,40 @@ final class CollapseCaptionInternalWhitespace implements Rule
     }
 
     /**
-     * @param  list<DOMElement>  $brsToReplace
+     * @param  list<Element>  $brsToReplace
      */
-    private function collectBrs(DOMNode $node, bool &$inCaption, array &$brsToReplace): void
+    private function collectBrs(Node $node, bool &$inCaption, array &$brsToReplace): void
     {
-        if ($node instanceof DOMText) {
-            $this->updateCaptionState($node->nodeValue ?? '', $inCaption);
-
-            return;
-        }
-
-        if ($node instanceof DOMElement
-            && strtolower($node->nodeName) === 'br'
+        if ($node instanceof Text) {
+            $this->updateCaptionState(NodeText::content($node), $inCaption);
+        } elseif ($node instanceof Element
+            && $node->localName === 'br'
             && $inCaption
         ) {
             $brsToReplace[] = $node;
-
-            return;
-        }
-
-        foreach ($node->childNodes as $child) {
-            $this->collectBrs($child, $inCaption, $brsToReplace);
+        } else {
+            foreach ($node->childNodes as $child) {
+                $this->collectBrs($child, $inCaption, $brsToReplace);
+            }
         }
     }
 
-    private function collapseTextNodes(DOMNode $node, bool &$inCaption): void
+    private function collapseTextNodes(Node $node, bool &$inCaption): void
     {
-        if ($node instanceof DOMText) {
-            $rewritten = $this->rewriteTextNode($node->nodeValue ?? '', $inCaption);
+        if ($node instanceof Text) {
+            $rewritten = $this->rewriteTextNode(NodeText::content($node), $inCaption);
             if ($rewritten !== $node->nodeValue) {
                 $node->nodeValue = $rewritten;
             }
+        } else {
+            $children = [];
+            foreach ($node->childNodes as $child) {
+                $children[] = $child;
+            }
 
-            return;
-        }
-
-        if (! $node instanceof DOMElement) {
-            return;
-        }
-
-        $children = [];
-        foreach ($node->childNodes as $child) {
-            $children[] = $child;
-        }
-
-        foreach ($children as $child) {
-            $this->collapseTextNodes($child, $inCaption);
+            foreach ($children as $child) {
+                $this->collapseTextNodes($child, $inCaption);
+            }
         }
     }
 
@@ -132,7 +121,7 @@ final class CollapseCaptionInternalWhitespace implements Rule
         $pos = 0;
         $len = strlen($text);
 
-        while ($pos < $len) {
+        while ($pos !== $len) {
             $openerAt = strpos($text, '[caption', $pos);
             $closerAt = strpos($text, '[/caption]', $pos);
 
@@ -143,6 +132,10 @@ final class CollapseCaptionInternalWhitespace implements Rule
                 return;
             }
 
+            // Only the final state is kept and the last marker decides it in either visiting order; the markers
+            // cannot share an offset.
+            // @pest-mutate-ignore: SmallerToGreaterOrEqual
+            // @pest-mutate-ignore: SmallerToSmallerOrEqual
             if ($nextOpener && (! $nextCloser || $openerAt < $closerAt)) {
                 $inCaption = true;
                 $pos = $openerAt + strlen('[caption');
@@ -167,7 +160,7 @@ final class CollapseCaptionInternalWhitespace implements Rule
         $pos = 0;
         $len = strlen($text);
 
-        while ($pos < $len) {
+        while ($pos !== $len) {
             $openerAt = strpos($text, '[caption', $pos);
             $closerAt = strpos($text, '[/caption]', $pos);
 
@@ -181,6 +174,8 @@ final class CollapseCaptionInternalWhitespace implements Rule
                 return $out;
             }
 
+            // The opener and closer markers cannot start at the same offset, so the comparison never ties.
+            // @pest-mutate-ignore: SmallerToSmallerOrEqual
             if ($nextOpener && (! $nextCloser || $openerAt < $closerAt)) {
                 $segment = substr($text, $pos, $openerAt - $pos);
                 $out .= $inCaption ? $this->collapseWhitespace($segment) : $segment;
@@ -212,6 +207,8 @@ final class CollapseCaptionInternalWhitespace implements Rule
 
     private function collapseWhitespace(string $segment): string
     {
+        // preg_replace returns null only when PCRE fails on a resource limit, and no test of this pattern lowers one.
+        // @pest-mutate-ignore: RemoveStringCast
         return (string) preg_replace('/\s+/', ' ', $segment);
     }
 }

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMXPath;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\XPath;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -43,15 +43,15 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class UnwrapRemainingDivs implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
         $divs = [];
         foreach (XpathNodes::query($xpath, '//div') as $div) {
             // //div yields only elements, so the guard only narrows the type.
             // @pest-mutate-ignore: InstanceOfToTrue
-            if ($div instanceof DOMElement) {
+            if ($div instanceof Element) {
                 $divs[] = $div;
             }
         }
@@ -61,26 +61,26 @@ final class UnwrapRemainingDivs implements Rule
         }
     }
 
-    private function unwrapWithBlankLines(DOMElement $div): void
+    private function unwrapWithBlankLines(Element $div): void
     {
         $parent = $div->parentNode;
         // A div found by XPath always has a parent, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
         // @pest-mutate-ignore: RemoveEarlyReturn
-        if (! $parent instanceof DOMNode) {
+        if (! $parent instanceof Node) {
             return;
         }
 
         $document = $div->ownerDocument;
         // An element in a document always has an owner document, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
-        if (! $document instanceof DOMDocument) {
+        if (! $document instanceof HTMLDocument) {
             return;
         }
 
         $parent->insertBefore($document->createTextNode("\n\n"), $div);
 
-        while ($div->firstChild instanceof DOMNode) {
+        while ($div->firstChild instanceof Node) {
             $parent->insertBefore($div->firstChild, $div);
         }
 

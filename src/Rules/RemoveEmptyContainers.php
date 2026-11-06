@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMXPath;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\XPath;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -73,46 +73,44 @@ final class RemoveEmptyContainers implements Rule
         ];
     }
 
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
         $preserved = self::preserved();
 
-        do {
-            $changed = false;
-            $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
-            $candidates = [];
-            foreach (XpathNodes::query($xpath, '//*') as $element) {
-                // //* yields only elements, so the guard only narrows the type and the continue is unreachable.
-                // @pest-mutate-ignore: ContinueToBreak
-                if (! $element instanceof DOMElement) {
-                    continue;
-                }
-
-                if (in_array($element->nodeName, $preserved, true)) {
-                    continue;
-                }
-
-                if (! $this->isEmpty($element)) {
-                    continue;
-                }
-
-                $candidates[] = $element;
+        // One pass removes everything that is empty: emptiness depends on text and content descendants, which
+        // removing other empty elements cannot add, so no parent becomes empty only after its children go.
+        $candidates = [];
+        foreach (XpathNodes::query($xpath, '//*') as $element) {
+            // //* yields only elements, so the guard only narrows the type and the continue is unreachable.
+            // @pest-mutate-ignore: ContinueToBreak
+            // @pest-mutate-ignore: InstanceOfToTrue
+            if (! $element instanceof Element) {
+                continue;
             }
 
-            foreach ($candidates as $element) {
-                $parent = $element->parentNode;
-                if ($parent instanceof DOMNode) {
-                    $parent->removeChild($element);
-                    $changed = true;
-                }
+            if (in_array($element->localName, $preserved, true)) {
+                continue;
             }
-        } while ($changed);
+
+            if (! $this->isEmpty($element)) {
+                continue;
+            }
+
+            $candidates[] = $element;
+        }
+
+        foreach ($candidates as $element) {
+            // An element found in the document always has a parent.
+            // @pest-mutate-ignore: RemoveNullSafeOperator
+            $element->parentNode?->removeChild($element);
+        }
     }
 
-    private function isEmpty(DOMElement $element): bool
+    private function isEmpty(Element $element): bool
     {
-        if (mb_trim($element->textContent) !== '') {
+        if (mb_trim(NodeText::content($element)) !== '') {
             return false;
         }
 

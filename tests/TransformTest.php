@@ -18,34 +18,21 @@
 
 declare(strict_types=1);
 
+use Dom\Element;
+use Dom\HTMLDocument;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Transform;
 
 test('apply exposes the explicitly closed envelope to rules for an unclosed script', function (): void {
-    // Ask the native parser for its version-specific raw-text contract.
-    $reference = new DOMDocument;
-    $previousErrorMode = libxml_use_internal_errors(true);
-
-    try {
-        $reference->loadHTML(
-            '<?xml encoding="UTF-8"?><body><script>hello</body>',
-            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
-        );
-    } finally {
-        // Do not leak parser errors or alter the caller's error mode.
-        libxml_clear_errors();
-        libxml_use_internal_errors($previousErrorMode);
-    }
-
     // Observe parser text before any serializer can normalize the fragment.
-    $rule = new readonly class($reference->getElementsByTagName('script')->item(0)?->textContent) implements Rule
+    $rule = new readonly class('hello') implements Rule
     {
         /**
-         * @param  string|null  $expected  Script text from the native closed envelope.
+         * @param  string  $expected  Script text the HTML5 parser keeps for an unclosed script.
          */
-        public function __construct(private ?string $expected) {}
+        public function __construct(private string $expected) {}
 
-        public function apply(DOMDocument $document): void
+        public function apply(HTMLDocument $document): void
         {
             expect($document->getElementsByTagName('script')->item(0)?->textContent)
                 ->toBe($this->expected);
@@ -94,11 +81,11 @@ test('apply decodes HTML5 entities and attribute quotes before excerpt and summa
     {
         public int $calls = 0;
 
-        public function apply(DOMDocument $document): void
+        public function apply(HTMLDocument $document): void
         {
-            // Require the documented synthetic root without an implied DTD.
-            expect($document->doctype)->toBeNull();
-            expect($document->documentElement?->nodeName)->toBe('body');
+            // Require the documented synthetic html5 shell around the body.
+            expect($document->doctype?->name)->toBe('html');
+            expect($document->body?->localName)->toBe('body');
 
             // Only the first pass sees the decoded markup; a repeat pass sees its plain-text output.
             if ($this->calls++ > 0) {
@@ -107,7 +94,7 @@ test('apply decodes HTML5 entities and attribute quotes before excerpt and summa
 
             // Observe the exact HTML handed to the configured rules.
             $paragraph = $document->getElementsByTagName('p')->item(0);
-            expect($paragraph)->toBeInstanceOf(DOMElement::class);
+            expect($paragraph)->toBeInstanceOf(Element::class);
             expect($paragraph?->getAttribute('title'))->toBe('two words');
             expect($paragraph?->textContent)->toBe("'quoted' \"double\" :");
         }
@@ -132,11 +119,11 @@ test('apply returns the original fragment when a configured rule removes the syn
     // Exercise the public extension point that can legitimately remove the envelope.
     $rule = new class implements Rule
     {
-        public function apply(DOMDocument $document): void
+        public function apply(HTMLDocument $document): void
         {
             // Remove only the synthetic body, leaving no serializable fragment.
             $body = $document->getElementsByTagName('body')->item(0);
-            if ($body instanceof DOMElement) {
+            if ($body instanceof Element) {
                 $body->parentNode?->removeChild($body);
             }
         }
@@ -157,7 +144,7 @@ test('apply normalizes carriage returns introduced by configured rules', functio
          */
         public function __construct(private string $newline) {}
 
-        public function apply(DOMDocument $document): void
+        public function apply(HTMLDocument $document): void
         {
             // Add a literal line ending for the outer serializer to normalize.
             $body = $document->getElementsByTagName('body')->item(0);
@@ -183,7 +170,7 @@ test('apply reduces title line endings to single spaces', function (string $newl
          */
         public function __construct(private string $newline) {}
 
-        public function apply(DOMDocument $document): void
+        public function apply(HTMLDocument $document): void
         {
             $body = $document->getElementsByTagName('body')->item(0);
             // Only fill an empty body, so repeated pipeline passes settle.
@@ -239,7 +226,7 @@ test('apply handles PCRE exhaustion after a custom rule has produced a fragment'
     string $fragment,
     string $expected,
 ): void {
-    // Insert exact serializer bytes without relying on platform-specific void tags.
+    // Insert exact text bytes so the serializer's escaping cannot change the expectation.
     $rule = new readonly class($fragment) implements Rule
     {
         /**
@@ -247,12 +234,12 @@ test('apply handles PCRE exhaustion after a custom rule has produced a fragment'
          */
         public function __construct(private string $fragment) {}
 
-        public function apply(DOMDocument $document): void
+        public function apply(HTMLDocument $document): void
         {
             $body = $document->getElementsByTagName('body')->item(0);
             // Only fill an empty body, so repeated pipeline passes settle.
             if ($body?->firstChild === null) {
-                $body?->appendChild($document->createCDATASection($this->fragment));
+                $body?->appendChild($document->createTextNode($this->fragment));
             }
             ini_set('pcre.backtrack_limit', '0');
         }
@@ -272,5 +259,26 @@ test('apply handles PCRE exhaustion after a custom rule has produced a fragment'
     expect($actual)->toContain('<'.$element.'><![CDATA['.$expected.']]></'.$element.'>');
 })->with([
     'CRLF is one space without requiring regex collapse' => ['title', "first\r\nsecond", 'first second'],
-    'void embed regex failure becomes empty content' => ['content:encoded', '<embed></embed>', ''],
+    'a lone LF is one space without requiring regex collapse' => ['title', "first\nsecond", 'first second'],
+    'a lone CR is one space without requiring regex collapse' => ['title', "first\rsecond", 'first second'],
 ]);
+
+test('apply writes line feeds for carriage returns that a rule leaves in content', function (): void {
+    $rule = new readonly class implements Rule
+    {
+        public function apply(HTMLDocument $document): void
+        {
+            $body = $document->getElementsByTagName('body')->item(0);
+            if ($body?->firstChild === null) {
+                $body?->appendChild($document->createTextNode("a\r\nb\rc"));
+            }
+        }
+    };
+
+    $actual = new Transform([$rule])->apply(
+        '<rss xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><item><content:encoded/></item></channel></rss>'
+    );
+
+    expect($actual)->toContain("<content:encoded><![CDATA[a\nb\nc]]></content:encoded>")
+        ->and($actual)->not->toContain("\r");
+});

@@ -46,17 +46,11 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  */
 function unwrapEmptyBoldsBody(string $html): string
 {
-    $document = new DOMDocument('1.0', 'UTF-8');
-    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    $document = Fixture::document($html);
 
     (new UnwrapEmptyBolds)->apply($document);
 
-    $out = '';
-    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
-        $out .= $document->saveHTML($child);
-    }
-
-    return $out;
+    return Fixture::bodyHtml($document);
 }
 
 test('unwrap empty bolds rewrites matching markup', function (string $html, string $expected) {
@@ -66,6 +60,7 @@ test('unwrap empty bolds rewrites matching markup', function (string $html, stri
     'whitespace b' => ['<p>a<b>  </b>c</p>', '<p>a  c</p>'],
     'tab newline b' => ["<p>a<b>\t\n</b>c</p>", "<p>a\t\nc</p>"],
     'two b' => ['<p><b> </b>x<b>y</b><b></b></p>', '<p> x<b>y</b></p>'],
+    'comment only b' => ['<p>a<b><!-- c --></b>c</p>', '<p>a<!-- c -->c</p>'],
     'nested empty' => ['<p><b><b> </b></b></p>', '<p><b> </b></p>'],
 ]);
 

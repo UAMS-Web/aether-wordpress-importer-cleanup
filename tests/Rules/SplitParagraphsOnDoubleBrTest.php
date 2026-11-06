@@ -46,17 +46,11 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  */
 function splitParagraphsOnDoubleBrBody(string $html): string
 {
-    $document = new DOMDocument('1.0', 'UTF-8');
-    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    $document = Fixture::document($html);
 
     (new SplitParagraphsOnDoubleBr)->apply($document);
 
-    $out = '';
-    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
-        $out .= $document->saveHTML($child);
-    }
-
-    return $out;
+    return Fixture::bodyHtml($document);
 }
 
 test('split paragraphs on double br rewrites matching markup', function (string $html, string $expected) {
@@ -68,6 +62,8 @@ test('split paragraphs on double br rewrites matching markup', function (string 
     'leading whitespace group dropped' => ['<p>   <br><br>x<br><br>y</p>', "<p>x</p>\n<p>y</p>"],
     'trailing whitespace node trimmed' => ['<p><b>x</b> <br><br>y</p>', "<p><b>x</b></p>\n<p>y</p>"],
     'leading whitespace trimmed' => ['<p>One<br><br>   Two</p>', "<p>One</p>\n<p>Two</p>"],
+    'trailing whitespace trimmed' => ['<p>A  <br><br>B  </p>', "<p>A</p>\n<p>B</p>"],
+    'empty element at group start' => ['<p>A<br><br><i></i>B</p>', "<p>A</p>\n<p><i></i>B</p>"],
     'three groups' => ['<p>A<br><br>B<br><br>C</p>', "<p>A</p>\n<p>B</p>\n<p>C</p>"],
     'markup in groups' => ['<p><b>A</b> one<br><br><i>B</i> two</p>', "<p><b>A</b> one</p>\n<p><i>B</i> two</p>"],
     'in div' => ['<div><p>A<br><br>B</p></div>', "<div><p>A</p>\n<p>B</p></div>"],
@@ -85,3 +81,14 @@ test('split paragraphs on double br leaves other markup alone', function (string
     'no br' => ['<p>One</p>'],
     'break outside paragraph' => ['A<br><br>B'],
 ]);
+
+test('split paragraphs leaves no empty text node at the edges of a new paragraph', function () {
+    $document = Fixture::document('<p><b>A</b> <br><br> <b>B</b></p>');
+
+    (new SplitParagraphsOnDoubleBr)->apply($document);
+
+    $paragraphs = $document->getElementsByTagName('p');
+    expect($paragraphs->length)->toBe(2)
+        ->and($paragraphs->item(0)?->childNodes->length)->toBe(1)
+        ->and($paragraphs->item(1)?->childNodes->length)->toBe(1);
+});

@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMText;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\Text;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -38,7 +39,7 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
  */
 final class MergeAdjacentLists implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
         do {
             $changed = false;
@@ -53,16 +54,16 @@ final class MergeAdjacentLists implements Rule
                     // nextNonWhitespaceSibling() returns null for it, so the loop reaches the same result.
                     // @pest-mutate-ignore: InstanceOfToTrue
                     // @pest-mutate-ignore: ContinueToBreak
-                    if (! $list->parentNode instanceof DOMNode) {
+                    if (! $list->parentNode instanceof Node) {
                         continue;
                     }
 
                     $next = $this->nextNonWhitespaceSibling($list);
-                    if (! $next instanceof DOMElement) {
+                    if (! $next instanceof Element) {
                         continue;
                     }
 
-                    if ($next->nodeName !== $tag) {
+                    if ($next->localName !== $tag) {
                         continue;
                     }
 
@@ -73,36 +74,36 @@ final class MergeAdjacentLists implements Rule
         } while ($changed);
     }
 
-    private function nextNonWhitespaceSibling(DOMElement $element): ?DOMNode
+    private function nextNonWhitespaceSibling(Element $element): ?Node
     {
         $sibling = $element->nextSibling;
-        while ($sibling instanceof DOMNode && $this->isBlankText($sibling)) {
+        while ($sibling instanceof Node && $this->isBlankText($sibling)) {
             $sibling = $sibling->nextSibling;
         }
 
         return $sibling;
     }
 
-    private function isBlankText(DOMNode $node): bool
+    private function isBlankText(Node $node): bool
     {
-        return $node instanceof DOMText && mb_trim($node->nodeValue ?? '') === '';
+        return $node instanceof Text && mb_trim(NodeText::content($node)) === '';
     }
 
-    private function merge(DOMElement $list, DOMElement $next): void
+    private function merge(Element $list, Element $next): void
     {
         $firstChild = $next->firstChild;
-        if ($firstChild instanceof DOMText && mb_trim($firstChild->nodeValue ?? '') === '') {
+        if ($firstChild instanceof Text && mb_trim(NodeText::content($firstChild)) === '') {
             $next->removeChild($firstChild);
         }
 
-        while ($next->firstChild instanceof DOMNode) {
+        while ($next->firstChild instanceof Node) {
             $list->appendChild($next->firstChild);
         }
 
         $parent = $next->parentNode;
         // A list that was found as a sibling always has a parent, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
-        if ($parent instanceof DOMNode) {
+        if ($parent instanceof Node) {
             $parent->removeChild($next);
         }
     }

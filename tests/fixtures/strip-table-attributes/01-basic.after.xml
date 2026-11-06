@@ -6,12 +6,12 @@
     <item>
         <title><![CDATA[Presentational table and td attributes are stripped]]></title>
         <link>https://news.uams.edu/2002/sample-q/</link>
-        <content:encoded><![CDATA[<table><tr><td>Cell</td></tr></table>]]></content:encoded>
+        <content:encoded><![CDATA[<table><tbody><tr><td>Cell</td></tr></tbody></table>]]></content:encoded>
     </item>
     <item>
         <title><![CDATA[Structural attributes survive]]></title>
         <link>https://news.uams.edu/2002/sample-r/</link>
-        <content:encoded><![CDATA[<table class="data" summary="Quarterly results"><tr><td scope="col" headers="x" colspan="2">Cell</td></tr></table>]]></content:encoded>
+        <content:encoded><![CDATA[<table class="data" summary="Quarterly results"><tbody><tr><td scope="col" headers="x" colspan="2">Cell</td></tr></tbody></table>]]></content:encoded>
     </item>
     <item>
         <title><![CDATA[Other tags untouched]]></title>

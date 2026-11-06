@@ -43,7 +43,7 @@ Friday, April 25
     <item>
         <title><![CDATA[Mid-line NBSP preserved]]></title>
         <link>https://news.uams.edu/2002/sample-aw2/</link>
-        <content:encoded><![CDATA[Fax: (501) 686-5067]]></content:encoded>
+        <content:encoded><![CDATA[Fax:&nbsp;(501) 686-5067]]></content:encoded>
     </item>
 </channel>
 </rss>

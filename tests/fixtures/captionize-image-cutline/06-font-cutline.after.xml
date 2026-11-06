@@ -6,7 +6,7 @@
     <item>
         <title><![CDATA[img + br + font.cutline at td level — Path A matches with new font support]]></title>
         <link>https://news.uams.edu/sample-cic-fc-a/</link>
-        <content:encoded><![CDATA[<td>[caption]<img alt="The Energizer spa will stop in 20 cities this year." src="https://uamshealth.com/upload/images/Newsroom/Features/health2008/bunny-breast-cancer.jpg"> The Energizer spa will stop in 20 cities this year.[/caption]</td>]]></content:encoded>
+        <content:encoded><![CDATA[[caption]<img alt="The Energizer spa will stop in 20 cities this year." src="https://uamshealth.com/upload/images/Newsroom/Features/health2008/bunny-breast-cancer.jpg"> The Energizer spa will stop in 20 cities this year.[/caption]]]></content:encoded>
     </item>
     <item>
         <title><![CDATA[img + font.cutline at body level — Path A matches with new font support]]></title>

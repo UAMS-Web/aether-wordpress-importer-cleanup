@@ -7,6 +7,7 @@
  */
 
 declare(strict_types=1);
+use Dom\HTMLDocument;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Transform;
 
@@ -67,13 +68,11 @@ test('apply captures malformed XML warnings and restores disabled internal error
 });
 
 test('apply clears HTML parser errors before invoking rules and restores caller mode', function (bool $mode): void {
-    // Prove the malformed fragment generates a libxml HTML parser diagnostic.
+    // Leave a stale queued error and set the caller's mode before the transform runs.
     libxml_use_internal_errors(true);
-    $probe = new DOMDocument;
-    $probe->loadHTML('<?xml encoding="UTF-8"?><body><p>Text</wrong></body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-
-    expect(libxml_get_errors())->not->toBeEmpty();
     libxml_clear_errors();
+    new DOMDocument()->loadXML('<rss>');
+    expect(libxml_get_errors())->not->toBeEmpty();
     libxml_use_internal_errors($mode);
 
     // Observe cleanup at the rule boundary, before another field can clear errors.
@@ -84,7 +83,7 @@ test('apply clears HTML parser errors before invoking rules and restores caller 
          */
         public function __construct(private bool $mode) {}
 
-        public function apply(DOMDocument $document): void
+        public function apply(HTMLDocument $document): void
         {
             expect(libxml_get_errors())->toBe([]);
             expect(libxml_use_internal_errors())->toBe($this->mode);

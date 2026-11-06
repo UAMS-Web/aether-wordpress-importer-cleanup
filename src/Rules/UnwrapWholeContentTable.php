@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMText;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\Text;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -50,15 +50,15 @@ final class UnwrapWholeContentTable implements Rule
         return ['tbody', 'tr', 'td'];
     }
 
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
         $body = $document->getElementsByTagName('body')->item(0);
-        if (! $body instanceof DOMElement) {
+        if (! $body instanceof Element) {
             return;
         }
 
         $outerTable = $this->bodyOnlyMeaningfulTable($body);
-        if (! $outerTable instanceof DOMElement) {
+        if (! $outerTable instanceof Element) {
             return;
         }
 
@@ -75,31 +75,31 @@ final class UnwrapWholeContentTable implements Rule
      * otherwise null. Whitespace text nodes are tolerated; any other
      * non-whitespace content disqualifies.
      */
-    private function bodyOnlyMeaningfulTable(DOMElement $body): ?DOMElement
+    private function bodyOnlyMeaningfulTable(Element $body): ?Element
     {
         $found = null;
 
         foreach ($body->childNodes as $child) {
-            if ($child instanceof DOMText && mb_trim($child->wholeText) === '') {
+            if ($child instanceof Text && mb_trim($child->wholeText) === '') {
                 continue;
             }
 
-            if (! $child instanceof DOMElement) {
+            if (! $child instanceof Element) {
                 return null;
             }
 
-            if ($found instanceof DOMElement) {
+            if ($found instanceof Element) {
                 return null;
             }
 
             $found = $child;
         }
 
-        if (! $found instanceof DOMElement) {
+        if (! $found instanceof Element) {
             return null;
         }
 
-        if (strtolower($found->nodeName) !== 'table') {
+        if ($found->localName !== 'table') {
             return null;
         }
 
@@ -112,17 +112,20 @@ final class UnwrapWholeContentTable implements Rule
      * `<table>` boundaries so the nested table's own structure is
      * left intact.
      *
-     * @param  list<DOMElement>  $collected
+     * @param  list<Element>  $collected
      */
-    private function collectStructureDescendants(DOMElement $element, array &$collected): void
+    private function collectStructureDescendants(Element $element, array &$collected): void
     {
         foreach ($element->childNodes as $child) {
-            if (! $child instanceof DOMElement) {
+            if (! $child instanceof Element) {
                 continue;
             }
 
-            $tag = strtolower($child->nodeName);
+            $tag = $child->localName;
 
+            // In parsed markup no structure element follows a nested table among its siblings, so stopping the
+            // walk there would collect the same elements.
+            // @pest-mutate-ignore: ContinueToBreak
             if ($tag === 'table') {
                 continue;
             }
@@ -135,26 +138,26 @@ final class UnwrapWholeContentTable implements Rule
         }
     }
 
-    private function unwrapWithBlankLines(DOMElement $element): void
+    private function unwrapWithBlankLines(Element $element): void
     {
         $parent = $element->parentNode;
         // An element collected from the body always has a parent, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
         // @pest-mutate-ignore: RemoveEarlyReturn
-        if (! $parent instanceof DOMNode) {
+        if (! $parent instanceof Node) {
             return;
         }
 
         $document = $element->ownerDocument;
         // An element in a document always has an owner document, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
-        if (! $document instanceof DOMDocument) {
+        if (! $document instanceof HTMLDocument) {
             return;
         }
 
         $parent->insertBefore($document->createTextNode("\n\n"), $element);
 
-        while ($element->firstChild instanceof DOMNode) {
+        while ($element->firstChild instanceof Node) {
             $parent->insertBefore($element->firstChild, $element);
         }
 

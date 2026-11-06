@@ -26,7 +26,7 @@
     <item>
         <title><![CDATA[NBSP before br is preserved]]></title>
         <link>https://news.uams.edu/2002/sample-bf/</link>
-        <content:encoded><![CDATA[Foo <br>Bar]]></content:encoded>
+        <content:encoded><![CDATA[Foo&nbsp;<br>Bar]]></content:encoded>
     </item>
 </channel>
 </rss>

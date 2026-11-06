@@ -45,14 +45,13 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  * @return string the serialized body of `$html` after the rule has run
  */
 $collapseCaption = function (string $html): string {
-    $document = new DOMDocument;
-    $document->loadHTML('<html><body>'.$html.'</body></html>');
+    $document = Fixture::document($html);
 
     (new CollapseCaptionInternalWhitespace)->apply($document);
 
     $body = $document->getElementsByTagName('body')->item(0);
 
-    return (string) $document->saveHTML($body);
+    return $document->saveHtml($body);
 };
 
 test('breaks and whitespace runs inside a caption collapse to one space and outside text is kept', function (string $html, string $expected) use ($collapseCaption) {
@@ -68,6 +67,7 @@ test('breaks and whitespace runs inside a caption collapse to one space and outs
     'malformed opener after text' => ['pre  x [caption id="1"  a   b', 'pre  x [caption id="1"  a   b'],
     'markup inside a caption' => ['[caption]<b>a   b</b><i>c<br>d</i>[/caption] e  f', '[caption]<b>a b</b><i>c d</i>[/caption] e  f'],
     'two captions' => ['[caption]a  b[/caption] m  n [caption]c  d[/caption]', '[caption]a b[/caption] m  n [caption]c d[/caption]'],
+    'comment inside a caption' => ['[caption]a<!-- c -->b<br>c[/caption]', '[caption]a<!-- c -->b c[/caption]'],
     'every whitespace kind' => ["[caption]a\t\r\n  b[/caption]", '[caption]a b[/caption]'],
 ]);
 

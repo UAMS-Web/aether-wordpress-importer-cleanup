@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Dom\HTMLDocument;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\StripOrdinalSupTags;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Tests\Fixture;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Transform;
@@ -46,17 +47,11 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  */
 function stripOrdinalSupTagsBody(string $html): string
 {
-    $document = new DOMDocument('1.0', 'UTF-8');
-    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    $document = Fixture::document($html);
 
     (new StripOrdinalSupTags)->apply($document);
 
-    $out = '';
-    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
-        $out .= $document->saveHTML($child);
-    }
-
-    return $out;
+    return Fixture::bodyHtml($document);
 }
 
 test('strip ordinal sup tags rewrites matching markup', function (string $html, string $expected) {
@@ -86,24 +81,22 @@ test('strip ordinal sup tags leaves other markup alone', function (string $html)
 ]);
 
 test('strip ordinal sup tags looks past an empty text node', function () {
-    $document = new DOMDocument('1.0', 'UTF-8');
-    $document->loadHTML('<?xml encoding="UTF-8"?><body><p>7<sup>th</sup></p></body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    $document = HTMLDocument::createFromString('<body><p>7<sup>th</sup></p></body>', LIBXML_NOERROR);
     $paragraph = $document->getElementsByTagName('p')->item(0);
     $sup = $document->getElementsByTagName('sup')->item(0);
     $paragraph?->insertBefore($document->createTextNode(''), $sup);
 
     (new StripOrdinalSupTags)->apply($document);
 
-    expect($document->saveHTML($paragraph))->toBe('<p>7th</p>');
+    expect($document->saveHtml($paragraph))->toBe('<p>7th</p>');
 });
 
 test('strip ordinal sup tags stops at an empty text node with nothing before it', function () {
-    $document = new DOMDocument('1.0', 'UTF-8');
-    $document->loadHTML('<?xml encoding="UTF-8"?><body><p><sup>th</sup></p></body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    $document = HTMLDocument::createFromString('<body><p><sup>th</sup></p></body>', LIBXML_NOERROR);
     $paragraph = $document->getElementsByTagName('p')->item(0);
     $paragraph?->insertBefore($document->createTextNode(''), $document->getElementsByTagName('sup')->item(0));
 
     (new StripOrdinalSupTags)->apply($document);
 
-    expect($document->saveHTML($paragraph))->toBe('<p><sup>th</sup></p>');
+    expect($document->saveHtml($paragraph))->toBe('<p><sup>th</sup></p>');
 });

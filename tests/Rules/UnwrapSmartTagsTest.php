@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Dom\HTMLDocument;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\UnwrapSmartTags;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Tests\Fixture;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Transform;
@@ -50,14 +51,14 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  */
 function unwrapSmartTagsParagraph(array $tagNames, bool $nested = false): string
 {
-    $document = new DOMDocument('1.0', 'UTF-8');
+    $document = HTMLDocument::createEmpty();
     $paragraph = $document->createElement('p');
     $document->appendChild($paragraph);
     $paragraph->appendChild($document->createTextNode('a'));
 
     $container = $paragraph;
     foreach ($tagNames as $tagName) {
-        $element = $document->createElement($tagName, 'x');
+        $element = Fixture::element($document, $tagName, 'x');
         $container->appendChild($element);
         if ($nested) {
             $container = $element;
@@ -68,7 +69,7 @@ function unwrapSmartTagsParagraph(array $tagNames, bool $nested = false): string
 
     (new UnwrapSmartTags)->apply($document);
 
-    return (string) $document->saveHTML($paragraph);
+    return $document->saveHtml($paragraph);
 }
 
 test('unwrap smart tags keeps the content of st1 to st9 elements', function (string $tagName) {

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMXPath;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\XPath;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -64,15 +64,15 @@ final class UnwrapTableWrappers implements Rule
         return ['p', 'strong', 'em'];
     }
 
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
         $tables = [];
         foreach (XpathNodes::query($xpath, '//table') as $table) {
             // //table yields only elements, so the guard only narrows the type.
             // @pest-mutate-ignore: InstanceOfToTrue
-            if ($table instanceof DOMElement) {
+            if ($table instanceof Element) {
                 $tables[] = $table;
             }
         }
@@ -81,7 +81,7 @@ final class UnwrapTableWrappers implements Rule
 
         foreach ($tables as $table) {
             $parent = $table->parentNode;
-            if (! $parent instanceof DOMElement) {
+            if (! $parent instanceof Element) {
                 continue;
             }
 
@@ -92,7 +92,7 @@ final class UnwrapTableWrappers implements Rule
             $this->padAroundTable($table);
 
             $cursor = $parent;
-            while ($cursor instanceof DOMElement && $this->isWrapper($cursor)) {
+            while ($cursor instanceof Element && $this->isWrapper($cursor)) {
                 $wrappers[spl_object_hash($cursor)] = $cursor;
                 $cursor = $cursor->parentNode;
             }
@@ -103,25 +103,25 @@ final class UnwrapTableWrappers implements Rule
         }
     }
 
-    private function isWrapper(DOMElement $element): bool
+    private function isWrapper(Element $element): bool
     {
-        return in_array(strtolower($element->nodeName), self::wrapperTags(), true);
+        return in_array($element->localName, self::wrapperTags(), true);
     }
 
-    private function padAroundTable(DOMElement $table): void
+    private function padAroundTable(Element $table): void
     {
         $parent = $table->parentNode;
         // A table found by XPath always has a parent, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
         // @pest-mutate-ignore: RemoveEarlyReturn
-        if (! $parent instanceof DOMNode) {
+        if (! $parent instanceof Node) {
             return;
         }
 
         $document = $table->ownerDocument;
         // An element in a document always has an owner document, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
-        if (! $document instanceof DOMDocument) {
+        if (! $document instanceof HTMLDocument) {
             return;
         }
 
@@ -131,16 +131,16 @@ final class UnwrapTableWrappers implements Rule
         $parent->insertBefore($document->createTextNode("\n\n"), $table->nextSibling);
     }
 
-    private function unwrapElement(DOMElement $element): void
+    private function unwrapElement(Element $element): void
     {
         $parent = $element->parentNode;
         // A wrapper collected while walking up from a table always has a parent, so the guard only narrows the type.
-        // @pest-mutate-ignore: InstanceOfToTrue
-        if (! $parent instanceof DOMNode) {
+        // A document cannot hold the padding text the wrapper carries, so a wrapper that is the document element stays.
+        if (! $parent instanceof Element) {
             return;
         }
 
-        while ($element->firstChild instanceof DOMNode) {
+        while ($element->firstChild instanceof Node) {
             $parent->insertBefore($element->firstChild, $element);
         }
 

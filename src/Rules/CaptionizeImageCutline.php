@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMText;
-use DOMXPath;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\Text;
+use Dom\XPath;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -102,15 +103,18 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class CaptionizeImageCutline implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
         // Path E — <p align="right|left"> or <p style="text-align: right|left">
         // with img + br + text (paragraph-anchored pre-pass).
         $alignedParagraphs = [];
         foreach (XpathNodes::query($xpath, '//p') as $p) {
-            if ($p instanceof DOMElement && $this->paragraphAlignment($p) !== null) {
+            // //p yields only elements, and an unaligned paragraph that slips through is rejected by the handler.
+            // @pest-mutate-ignore: InstanceOfToTrue
+            // @pest-mutate-ignore: BooleanAndToBooleanOr
+            if ($p instanceof Element && $this->paragraphAlignment($p) !== null) {
                 $alignedParagraphs[] = $p;
             }
         }
@@ -125,7 +129,9 @@ final class CaptionizeImageCutline implements Rule
         // cell holds only a caption.
         $cells = [];
         foreach (XpathNodes::query($xpath, '//td') as $td) {
-            if ($td instanceof DOMElement) {
+            // The query selects only elements, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
+            if ($td instanceof Element) {
                 $cells[] = $td;
             }
         }
@@ -143,7 +149,9 @@ final class CaptionizeImageCutline implements Rule
         // at the wrapper's parent level.
         $cutlineWrappers = [];
         foreach (XpathNodes::query($xpath, '//*[@class]') as $element) {
-            if ($element instanceof DOMElement && $this->isCutlineElement($element)) {
+            // //*[@class] yields only elements, so the type check only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
+            if ($element instanceof Element && $this->isCutlineElement($element)) {
                 $cutlineWrappers[] = $element;
             }
         }
@@ -155,8 +163,10 @@ final class CaptionizeImageCutline implements Rule
         // Path D — wp-caption div blocks (div-anchored pre-pass).
         $wpCaptionDivs = [];
         foreach (XpathNodes::query($xpath, '//div') as $div) {
-            if ($div instanceof DOMElement
-                && $this->hasClassToken($div->getAttribute('class'), 'wp-caption')
+            // //div yields only elements, so the type check only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
+            if ($div instanceof Element
+                && $this->hasClassToken(NodeText::attribute($div, 'class'), 'wp-caption')
             ) {
                 $wpCaptionDivs[] = $div;
             }
@@ -169,7 +179,9 @@ final class CaptionizeImageCutline implements Rule
         // Paths A/B/C — img-anchored sweep.
         $imgs = [];
         foreach (XpathNodes::query($xpath, '//img') as $img) {
-            if ($img instanceof DOMElement) {
+            // The query selects only elements, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
+            if ($img instanceof Element) {
                 $imgs[] = $img;
             }
         }
@@ -187,7 +199,7 @@ final class CaptionizeImageCutline implements Rule
      * removed and `\n` padding is added before the opener and after
      * the closer so the caption sits on its own line.
      */
-    private function tryCaptionizeAlignedParagraph(DOMElement $p): void
+    private function tryCaptionizeAlignedParagraph(Element $p): void
     {
         $align = $this->paragraphAlignment($p);
         // Callers pass only paragraphs that already have an alignment, so this guard only narrows the type.
@@ -201,15 +213,15 @@ final class CaptionizeImageCutline implements Rule
         $stage = 'expect_img';
 
         foreach ($p->childNodes as $child) {
-            if ($child instanceof DOMText
-                && mb_trim($child->nodeValue ?? '') === ''
+            if ($child instanceof Text
+                && mb_trim(NodeText::content($child)) === ''
                 && $stage === 'expect_img'
             ) {
                 continue;
             }
 
             if ($stage === 'expect_img') {
-                if ($child instanceof DOMElement && strtolower($child->nodeName) === 'img') {
+                if ($child instanceof Element && $child->localName === 'img') {
                     $img = $child;
                     $stage = 'collect_text';
 
@@ -223,13 +235,13 @@ final class CaptionizeImageCutline implements Rule
             // disqualifies. <br> becomes a soft separator (single space);
             // `CollapseCaptionInternalWhitespace` later normalizes runs of
             // whitespace inside the caption to a single space.
-            if ($child instanceof DOMText) {
-                $textParts[] = $child->nodeValue ?? '';
+            if ($child instanceof Text) {
+                $textParts[] = NodeText::content($child);
 
                 continue;
             }
 
-            if ($child instanceof DOMElement && strtolower($child->nodeName) === 'br') {
+            if ($child instanceof Element && $child->localName === 'br') {
                 $textParts[] = ' ';
 
                 continue;
@@ -240,7 +252,8 @@ final class CaptionizeImageCutline implements Rule
 
         // Text is collected only after the image is found, so a missing image leaves the text empty and the next check returns.
         // @pest-mutate-ignore: RemoveEarlyReturn
-        if (! $img instanceof DOMElement) {
+        // @pest-mutate-ignore: InstanceOfToTrue
+        if (! $img instanceof Element) {
             return;
         }
 
@@ -252,12 +265,15 @@ final class CaptionizeImageCutline implements Rule
         $parent = $p->parentNode;
         // A paragraph taken from the document always has a parent. Only a loaded document is processed, so the guard only narrows the type.
         // @pest-mutate-ignore: RemoveEarlyReturn
-        if (! $parent instanceof DOMNode) {
+        // @pest-mutate-ignore: InstanceOfToTrue
+        if (! $parent instanceof Node) {
             return;
         }
 
         $document = $p->ownerDocument;
-        if (! $document instanceof DOMDocument) {
+        // An element in a document always has an owner document, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
+        if (! $document instanceof HTMLDocument) {
             return;
         }
 
@@ -284,14 +300,16 @@ final class CaptionizeImageCutline implements Rule
      * any whitespace, with or without a trailing semicolon).
      * Returns null otherwise.
      */
-    private function paragraphAlignment(DOMElement $p): ?string
+    private function paragraphAlignment(Element $p): ?string
     {
-        $align = strtolower($p->getAttribute('align'));
+        $align = strtolower(NodeText::attribute($p, 'align'));
         if ($align === 'right' || $align === 'left') {
             return $align;
         }
 
-        $style = $p->getAttribute('style');
+        $style = NodeText::attribute($p, 'style');
+        // An empty style cannot match the pattern, so the emptiness test only skips a regex call.
+        // @pest-mutate-ignore: EmptyStringToNotEmpty
         if ($style !== '' && preg_match('/(?<![A-Za-z-])text-align\s*:\s*(right|left)\b/i', $style, $matches) === 1) {
             return strtolower($matches[1]);
         }
@@ -310,7 +328,7 @@ final class CaptionizeImageCutline implements Rule
      * from `AddMissingCaptionAttributes` (rule 27) — the resulting
      * shortcode ends up `[caption id="" align="aligncenter" width="300"]`.
      */
-    private function tryCaptionizeTableCell(DOMElement $td): void
+    private function tryCaptionizeTableCell(Element $td): void
     {
         $img = null;
         $br = null;
@@ -318,15 +336,15 @@ final class CaptionizeImageCutline implements Rule
         $stage = 'expect_img';
 
         foreach ($td->childNodes as $child) {
-            if ($child instanceof DOMText
-                && mb_trim($child->nodeValue ?? '') === ''
+            if ($child instanceof Text
+                && mb_trim(NodeText::content($child)) === ''
                 && $stage !== 'collect_text'
             ) {
                 continue;
             }
 
             if ($stage === 'expect_img') {
-                if ($child instanceof DOMElement && strtolower($child->nodeName) === 'img') {
+                if ($child instanceof Element && $child->localName === 'img') {
                     $img = $child;
                     $stage = 'expect_br';
 
@@ -336,8 +354,10 @@ final class CaptionizeImageCutline implements Rule
                 return;
             }
 
+            // A child that is not the break would be collected as text and the missing break would then return below.
+            // @pest-mutate-ignore: RemoveEarlyReturn
             if ($stage === 'expect_br') {
-                if ($child instanceof DOMElement && strtolower($child->nodeName) === 'br') {
+                if ($child instanceof Element && $child->localName === 'br') {
                     $br = $child;
                     $stage = 'collect_text';
 
@@ -348,8 +368,8 @@ final class CaptionizeImageCutline implements Rule
             }
 
             // stage === 'collect_text'
-            if ($child instanceof DOMText) {
-                $textParts[] = $child->nodeValue ?? '';
+            if ($child instanceof Text) {
+                $textParts[] = NodeText::content($child);
 
                 continue;
             }
@@ -359,7 +379,14 @@ final class CaptionizeImageCutline implements Rule
 
         // The break is found before any text is collected, so a missing image or break leaves the text empty and the next check returns.
         // @pest-mutate-ignore: RemoveEarlyReturn
-        if (! $img instanceof DOMElement || ! $br instanceof DOMElement) {
+        // @pest-mutate-ignore: InstanceOfToTrue
+        if (! $img instanceof Element) {
+            return;
+        }
+
+        // @pest-mutate-ignore: RemoveEarlyReturn
+        // @pest-mutate-ignore: InstanceOfToTrue
+        if (! $br instanceof Element) {
             return;
         }
 
@@ -369,13 +396,15 @@ final class CaptionizeImageCutline implements Rule
         }
 
         $document = $td->ownerDocument;
-        if (! $document instanceof DOMDocument) {
+        // An element in a document always has an owner document, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
+        if (! $document instanceof HTMLDocument) {
             return;
         }
 
         $this->stripNonEssentialImgAttributes($img);
 
-        while ($td->firstChild instanceof DOMNode) {
+        while ($td->firstChild instanceof Node) {
             $td->removeChild($td->firstChild);
         }
 
@@ -394,28 +423,28 @@ final class CaptionizeImageCutline implements Rule
      * disqualifies. On success the wrapping cutline element is
      * removed.
      */
-    private function tryCaptionizeCutlineWrapper(DOMElement $cutline): void
+    private function tryCaptionizeCutlineWrapper(Element $cutline): void
     {
         $img = null;
         $textParts = [];
 
         foreach ($cutline->childNodes as $child) {
-            if ($child instanceof DOMText) {
-                $textParts[] = $child->nodeValue ?? '';
+            if ($child instanceof Text) {
+                $textParts[] = NodeText::content($child);
 
                 continue;
             }
 
             // A non-element node has a name that matches no tag below, so the final return handles it with or without this one.
             // @pest-mutate-ignore: RemoveEarlyReturn
-            if (! $child instanceof DOMElement) {
+            if (! $child instanceof Element) {
                 return;
             }
 
-            $tag = strtolower($child->nodeName);
+            $tag = $child->localName;
 
             if ($tag === 'img') {
-                if ($img instanceof DOMElement) {
+                if ($img instanceof Element) {
                     return;
                 }
 
@@ -433,7 +462,7 @@ final class CaptionizeImageCutline implements Rule
             return;
         }
 
-        if (! $img instanceof DOMElement) {
+        if (! $img instanceof Element) {
             return;
         }
 
@@ -446,14 +475,14 @@ final class CaptionizeImageCutline implements Rule
         // A cutline taken from the document always has a parent. Only a loaded document is processed, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
         // @pest-mutate-ignore: RemoveEarlyReturn
-        if (! $parent instanceof DOMNode) {
+        if (! $parent instanceof Node) {
             return;
         }
 
         $document = $cutline->ownerDocument;
         // Only a loaded document is processed, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
-        if (! $document instanceof DOMDocument) {
+        if (! $document instanceof HTMLDocument) {
             return;
         }
 
@@ -476,37 +505,37 @@ final class CaptionizeImageCutline implements Rule
      * div is removed; the img and caption text emerge at the div's
      * position wrapped in `[caption]` / `[/caption]`.
      */
-    private function tryCaptionizeWpCaptionDiv(DOMElement $div): void
+    private function tryCaptionizeWpCaptionDiv(Element $div): void
     {
         $img = null;
         $captionP = null;
 
         foreach ($div->childNodes as $child) {
-            if ($child instanceof DOMText && mb_trim($child->wholeText) === '') {
+            if ($child instanceof Text && mb_trim($child->wholeText) === '') {
                 continue;
             }
 
-            if ($child instanceof DOMElement && strtolower($child->nodeName) === 'br') {
+            if ($child instanceof Element && $child->localName === 'br') {
                 continue;
             }
 
             // A non-element node has a name that matches no tag below, so the final return handles it with or without this one.
             // @pest-mutate-ignore: RemoveEarlyReturn
-            if (! $child instanceof DOMElement) {
+            if (! $child instanceof Element) {
                 return;
             }
 
-            $tag = strtolower($child->nodeName);
+            $tag = $child->localName;
 
-            if ($tag === 'img' && ! $img instanceof DOMElement) {
+            if ($tag === 'img' && ! $img instanceof Element) {
                 $img = $child;
 
                 continue;
             }
 
             if ($tag === 'p'
-                && $this->hasClassToken($child->getAttribute('class'), 'wp-caption-text')
-                && ! $captionP instanceof DOMElement
+                && $this->hasClassToken(NodeText::attribute($child, 'class'), 'wp-caption-text')
+                && ! $captionP instanceof Element
             ) {
                 $captionP = $child;
 
@@ -516,19 +545,22 @@ final class CaptionizeImageCutline implements Rule
             return;
         }
 
-        if (! $img instanceof DOMElement || ! $captionP instanceof DOMElement) {
+        if (! $img instanceof Element || ! $captionP instanceof Element) {
             return;
         }
 
         $parent = $div->parentNode;
         // A div taken from the document always has a parent. Only a loaded document is processed, so the guard only narrows the type.
         // @pest-mutate-ignore: RemoveEarlyReturn
-        if (! $parent instanceof DOMNode) {
+        // @pest-mutate-ignore: InstanceOfToTrue
+        if (! $parent instanceof Node) {
             return;
         }
 
         $document = $div->ownerDocument;
-        if (! $document instanceof DOMDocument) {
+        // An element in a document always has an owner document, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
+        if (! $document instanceof HTMLDocument) {
             return;
         }
 
@@ -538,7 +570,7 @@ final class CaptionizeImageCutline implements Rule
         $parent->insertBefore($img, $div);
         $parent->insertBefore($document->createTextNode(' '), $div);
 
-        while ($captionP->firstChild instanceof DOMNode) {
+        while ($captionP->firstChild instanceof Node) {
             $parent->insertBefore($captionP->firstChild, $div);
         }
 
@@ -546,10 +578,12 @@ final class CaptionizeImageCutline implements Rule
         $parent->removeChild($div);
     }
 
-    private function tryCaptionize(DOMElement $img): void
+    private function tryCaptionize(Element $img): void
     {
         // Path A / B — cutline is reachable from img's own siblings.
         $match = $this->findCutlineForAnchor($img);
+        // After converting, the image's parent holds shortcode text, so the path C test below rejects it anyway.
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if ($match !== null) {
             [$cutline, $wrappingP] = $match;
             if ($wrappingP !== null) {
@@ -567,11 +601,12 @@ final class CaptionizeImageCutline implements Rule
         $wrapper = $img->parentNode;
         // An image in a loaded HTML document always sits below an element, so the guard only narrows the type.
         // @pest-mutate-ignore: RemoveEarlyReturn
-        if (! $wrapper instanceof DOMElement) {
+        // @pest-mutate-ignore: InstanceOfToTrue
+        if (! $wrapper instanceof Element) {
             return;
         }
 
-        if (strtolower($wrapper->nodeName) !== 'p') {
+        if ($wrapper->localName !== 'p') {
             return;
         }
 
@@ -590,13 +625,15 @@ final class CaptionizeImageCutline implements Rule
         }
 
         $grandparent = $wrapper->parentNode;
-        if (! $grandparent instanceof DOMNode) {
+        // A node reached from the body always has a parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
+        if (! $grandparent instanceof Node) {
             return;
         }
 
-        // Lift img out of its wrapping <p>, drop the now-empty <p>.
+        // Lift img out of its wrapping <p>; the now-empty <p> then sits between the image and the cutline,
+        // where convertToCaption() removes it.
         $grandparent->insertBefore($img, $wrapper);
-        $grandparent->removeChild($wrapper);
 
         $this->convertToCaption($img, $cutline);
     }
@@ -607,16 +644,16 @@ final class CaptionizeImageCutline implements Rule
      * `wrappingP` is non-null when the cutline is wrapped in a `<p>` and
      * that `<p>` should be removed after captionizing.
      *
-     * @return array{0: DOMElement, 1: DOMElement|null}|null
+     * @return array{0: Element, 1: Element|null}|null
      */
-    private function findCutlineForAnchor(DOMElement $anchor): ?array
+    private function findCutlineForAnchor(Element $anchor): ?array
     {
         $next = $this->nextSubstantiveSibling($anchor);
-        if (! $next instanceof DOMElement) {
+        if (! $next instanceof Element) {
             return null;
         }
 
-        $tag = strtolower($next->nodeName);
+        $tag = $next->localName;
 
         if ($this->isCutlineElement($next)) {
             return [$next, null];
@@ -624,7 +661,7 @@ final class CaptionizeImageCutline implements Rule
 
         if ($tag === 'p') {
             $inner = $this->onlyMeaningfulChild($next);
-            if ($inner instanceof DOMElement && $this->isCutlineElement($inner)) {
+            if ($inner instanceof Element && $this->isCutlineElement($inner)) {
                 return [$inner, $next];
             }
         }
@@ -639,59 +676,56 @@ final class CaptionizeImageCutline implements Rule
      * (the editor's old serializer); semantically equivalent to the
      * later `<span class="cutline">` form.
      */
-    private function isCutlineElement(DOMElement $element): bool
+    private function isCutlineElement(Element $element): bool
     {
-        $tag = strtolower($element->nodeName);
+        $tag = $element->localName;
 
         if (! in_array($tag, ['div', 'span', 'font', 'p'], true)) {
             return false;
         }
 
-        return $this->hasClassToken($element->getAttribute('class'), 'cutline');
+        return $this->hasClassToken(NodeText::attribute($element, 'class'), 'cutline');
     }
 
     /**
      * Next sibling skipping whitespace-only text nodes and `<br>` elements.
      */
-    private function nextSubstantiveSibling(DOMNode $node): ?DOMNode
+    private function nextSubstantiveSibling(Node $node): ?Node
     {
         $next = $node->nextSibling;
 
-        while ($next instanceof DOMNode) {
-            if ($next instanceof DOMText && mb_trim($next->wholeText) === '') {
-                $next = $next->nextSibling;
-
-                continue;
-            }
-
-            if ($next instanceof DOMElement && strtolower($next->nodeName) === 'br') {
-                $next = $next->nextSibling;
-
-                continue;
-            }
-
-            return $next;
+        while ($next instanceof Node && $this->isSkippableSibling($next)) {
+            $next = $next->nextSibling;
         }
 
-        return null;
+        return $next;
+    }
+
+    private function isSkippableSibling(Node $node): bool
+    {
+        if ($node instanceof Text) {
+            return mb_trim($node->wholeText) === '';
+        }
+
+        return $node instanceof Element && $node->localName === 'br';
     }
 
     /**
      * True iff every child of `$parent` is either `$target`, a
      * whitespace-only text node, or a `<br>`.
      */
-    private function isImgOnlyMeaningfulChild(DOMElement $parent, DOMNode $target): bool
+    private function isImgOnlyMeaningfulChild(Element $parent, Node $target): bool
     {
         foreach ($parent->childNodes as $child) {
             if ($child === $target) {
                 continue;
             }
 
-            if ($child instanceof DOMText && mb_trim($child->wholeText) === '') {
+            if ($child instanceof Text && mb_trim($child->wholeText) === '') {
                 continue;
             }
 
-            if ($child instanceof DOMElement && strtolower($child->nodeName) === 'br') {
+            if ($child instanceof Element && $child->localName === 'br') {
                 continue;
             }
 
@@ -705,24 +739,24 @@ final class CaptionizeImageCutline implements Rule
      * If `$parent` has exactly one meaningful child element (after
      * skipping whitespace text and `<br>`s), return it. Otherwise null.
      */
-    private function onlyMeaningfulChild(DOMElement $parent): ?DOMElement
+    private function onlyMeaningfulChild(Element $parent): ?Element
     {
         $found = null;
 
         foreach ($parent->childNodes as $child) {
-            if ($child instanceof DOMText && mb_trim($child->wholeText) === '') {
+            if ($child instanceof Text && mb_trim($child->wholeText) === '') {
                 continue;
             }
 
-            if ($child instanceof DOMElement && strtolower($child->nodeName) === 'br') {
+            if ($child instanceof Element && $child->localName === 'br') {
                 continue;
             }
 
-            if (! $child instanceof DOMElement) {
+            if (! $child instanceof Element) {
                 return null;
             }
 
-            if ($found instanceof DOMElement) {
+            if ($found instanceof Element) {
                 return null;
             }
 
@@ -736,10 +770,12 @@ final class CaptionizeImageCutline implements Rule
      * Move `$cutline` to take `$wrappingP`'s place at the grandparent
      * level, then drop the (now empty) `$wrappingP`.
      */
-    private function unwrapWrappingP(DOMElement $wrappingP, DOMElement $cutline): void
+    private function unwrapWrappingP(Element $wrappingP, Element $cutline): void
     {
         $grandparent = $wrappingP->parentNode;
-        if (! $grandparent instanceof DOMNode) {
+        // A node reached from the body always has a parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
+        if (! $grandparent instanceof Node) {
             return;
         }
 
@@ -756,17 +792,20 @@ final class CaptionizeImageCutline implements Rule
         return $tokens !== false && in_array($token, $tokens, true);
     }
 
-    private function convertToCaption(DOMElement $img, DOMElement $cutline): void
+    private function convertToCaption(Element $img, Element $cutline): void
     {
         $parent = $img->parentNode;
         // An image taken from the document always has a parent. Only a loaded document is processed, so the guard only narrows the type.
         // @pest-mutate-ignore: RemoveEarlyReturn
-        if (! $parent instanceof DOMNode) {
+        // @pest-mutate-ignore: InstanceOfToTrue
+        if (! $parent instanceof Node) {
             return;
         }
 
         $document = $img->ownerDocument;
-        if (! $document instanceof DOMDocument) {
+        // An element in a document always has an owner document, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
+        if (! $document instanceof HTMLDocument) {
             return;
         }
 
@@ -774,7 +813,9 @@ final class CaptionizeImageCutline implements Rule
         $this->removeNodesBetween($parent, $img, $cutline);
 
         $openerToken = '[caption';
-        if ($parent instanceof DOMElement && strtolower($parent->nodeName) === 'p') {
+        // The cutline's parent is always an element here.
+        // @pest-mutate-ignore: InstanceOfToTrue
+        if ($parent instanceof Element && $parent->localName === 'p') {
             $align = $this->paragraphAlignment($parent);
             if ($align !== null) {
                 $openerToken .= ' align="align'.$align.'"';
@@ -786,7 +827,7 @@ final class CaptionizeImageCutline implements Rule
         $parent->insertBefore($document->createTextNode($openerToken), $img);
         $parent->insertBefore($document->createTextNode(' '), $cutline);
 
-        while ($cutline->firstChild instanceof DOMNode) {
+        while ($cutline->firstChild instanceof Node) {
             $parent->insertBefore($cutline->firstChild, $cutline);
         }
 
@@ -794,14 +835,14 @@ final class CaptionizeImageCutline implements Rule
         $parent->removeChild($cutline);
     }
 
-    private function stripNonEssentialImgAttributes(DOMElement $img): void
+    private function stripNonEssentialImgAttributes(Element $img): void
     {
         $keep = ['src', 'alt', 'width', 'height'];
 
         $toRemove = [];
         foreach ($img->attributes as $attr) {
-            if (! in_array(strtolower($attr->nodeName), $keep, true)) {
-                $toRemove[] = $attr->nodeName;
+            if (! in_array($attr->localName, $keep, true)) {
+                $toRemove[] = $attr->localName;
             }
         }
 
@@ -810,12 +851,14 @@ final class CaptionizeImageCutline implements Rule
         }
     }
 
-    private function removeNodesBetween(DOMNode $parent, DOMNode $start, DOMNode $end): void
+    private function removeNodesBetween(Node $parent, Node $start, Node $end): void
     {
         $cursor = $start->nextSibling;
         $toRemove = [];
 
-        while ($cursor instanceof DOMNode && $cursor !== $end) {
+        // The end node is a later sibling, so the walk reaches it before running out of siblings.
+        // @pest-mutate-ignore: InstanceOfToTrue
+        while ($cursor instanceof Node && $cursor !== $end) {
             $toRemove[] = $cursor;
             $cursor = $cursor->nextSibling;
         }

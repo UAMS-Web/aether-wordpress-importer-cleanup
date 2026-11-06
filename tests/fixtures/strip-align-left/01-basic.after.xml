@@ -11,7 +11,7 @@
     <item>
         <title><![CDATA[align=left on td is stripped]]></title>
         <link>https://news.uams.edu/2002/sample-jb/</link>
-        <content:encoded><![CDATA[<table><tr><td>Foo</td></tr></table>]]></content:encoded>
+        <content:encoded><![CDATA[<table><tbody><tr><td>Foo</td></tr></tbody></table>]]></content:encoded>
     </item>
     <item>
         <title><![CDATA[align=LEFT (uppercase value) is stripped]]></title>

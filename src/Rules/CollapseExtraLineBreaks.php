@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMText;
-use DOMXPath;
+use Dom\HTMLDocument;
+use Dom\Text;
+use Dom\XPath;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -24,23 +25,26 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class CollapseExtraLineBreaks implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
         $document->normalize();
 
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
         foreach (XpathNodes::query($xpath, '//text()') as $textNode) {
-            // The guard only narrows the type: //text() yields text and CDATA nodes, both DOMText, so continue is unreachable.
+            // The guard only narrows the type: //text() yields text and CDATA nodes, both Text, so continue is unreachable.
             // @pest-mutate-ignore: ContinueToBreak
-            if (! $textNode instanceof DOMText) {
+            // @pest-mutate-ignore: InstanceOfToTrue
+            if (! $textNode instanceof Text) {
                 continue;
             }
 
+            // preg_replace returns null only when PCRE fails, and null empties a node exactly as an empty string does.
+            // @pest-mutate-ignore: RemoveStringCast
             $textNode->nodeValue = (string) preg_replace(
                 '/\n{3,}/',
                 "\n\n",
-                $textNode->nodeValue ?? '',
+                NodeText::content($textNode),
             );
         }
     }

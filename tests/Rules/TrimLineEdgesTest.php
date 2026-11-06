@@ -46,17 +46,11 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  */
 function trimLineEdgesBody(string $html): string
 {
-    $document = new DOMDocument('1.0', 'UTF-8');
-    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    $document = Fixture::document($html);
 
     (new TrimLineEdges)->apply($document);
 
-    $out = '';
-    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
-        $out .= $document->saveHTML($child);
-    }
-
-    return $out;
+    return Fixture::bodyHtml($document);
 }
 
 test('trim line edges rewrites matching markup', function (string $html, string $expected) {
@@ -77,3 +71,14 @@ test('trim line edges leaves other markup alone', function (string $html) {
     'no newline kept' => ['<p>a  b</p>'],
     'plain' => ['<p>a</p>'],
 ]);
+
+test('trim line edges merges adjacent text nodes before trimming', function () {
+    $document = Fixture::document('');
+    $body = Fixture::first($document, 'body');
+    $body->appendChild($document->createTextNode('a '));
+    $body->appendChild($document->createTextNode("\nb"));
+
+    (new TrimLineEdges)->apply($document);
+
+    expect(Fixture::bodyHtml($document))->toBe("a\nb");
+});

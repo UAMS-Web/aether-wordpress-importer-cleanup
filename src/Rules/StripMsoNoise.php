@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMXPath;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\NodeList;
+use Dom\XPath;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -30,27 +33,31 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class StripMsoNoise implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
         $this->stripMsoClassTokens($xpath);
         $this->removeInlineStyles($xpath);
         $this->unwrapFontTags($xpath);
     }
 
-    private function stripMsoClassTokens(DOMXPath $xpath): void
+    private function stripMsoClassTokens(XPath $xpath): void
     {
         foreach (XpathNodes::query($xpath, '//*[@class]') as $element) {
             // The query selects only elements, so the guard only narrows the type and the continue is unreachable.
             // @pest-mutate-ignore: ContinueToBreak
-            if (! $element instanceof DOMElement) {
+            // @pest-mutate-ignore: InstanceOfToTrue
+            if (! $element instanceof Element) {
                 continue;
             }
 
             // Remove Mso-prefixed tokens; preserve everything else
-            $original = $element->getAttribute('class');
+            $original = NodeText::attribute($element, 'class');
+            // preg_replace returns null only when PCRE fails on a resource limit, and no test of these patterns lowers one.
+            // @pest-mutate-ignore: RemoveStringCast
             $cleaned = (string) preg_replace('/\bMso[A-Za-z0-9_-]*\b/i', '', $original);
+            // @pest-mutate-ignore: RemoveStringCast
             $cleaned = trim((string) preg_replace('/\s+/', ' ', $cleaned));
 
             if ($cleaned === '') {
@@ -61,24 +68,26 @@ final class StripMsoNoise implements Rule
         }
     }
 
-    private function removeInlineStyles(DOMXPath $xpath): void
+    private function removeInlineStyles(XPath $xpath): void
     {
         foreach (XpathNodes::query($xpath, '//*[@style]') as $element) {
-            if ($element instanceof DOMElement) {
+            // The query selects only elements, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
+            if ($element instanceof Element) {
                 $element->removeAttribute('style');
             }
         }
     }
 
-    private function unwrapFontTags(DOMXPath $xpath): void
+    private function unwrapFontTags(XPath $xpath): void
     {
         // Iterate a fresh snapshot since removing elements mutates the live
-        // DOMNodeList in-flight.
+        // NodeList in-flight.
         $fontElements = [];
         foreach (XpathNodes::query($xpath, '//font') as $element) {
             // The query selects only elements, so the guard only narrows the type.
             // @pest-mutate-ignore: InstanceOfToTrue
-            if ($element instanceof DOMElement) {
+            if ($element instanceof Element) {
                 $fontElements[] = $element;
             }
         }
@@ -88,11 +97,11 @@ final class StripMsoNoise implements Rule
             // A font element found by XPath always has a parent, so the guard only narrows the type.
             // @pest-mutate-ignore: InstanceOfToTrue
             // @pest-mutate-ignore: ContinueToBreak
-            if (! $parent instanceof \DOMNode) {
+            if (! $parent instanceof Node) {
                 continue;
             }
 
-            while ($font->firstChild instanceof \DOMNode) {
+            while ($font->firstChild instanceof Node) {
                 $parent->insertBefore($font->firstChild, $font);
             }
 

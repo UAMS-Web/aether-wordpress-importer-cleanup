@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Dom\HTMLDocument;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\ConvertYoutubeEmbedToUrl;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Tests\Fixture;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Transform;
@@ -42,8 +43,7 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
 })->with('fixturePairs');
 
 test('a non-youtube embed does not stop later youtube embeds from converting', function () {
-    $document = new DOMDocument;
-    $document->loadHTML('<html><body><embed src="http://example.com/a.swf"><embed src="http://www.youtube.com/v/abc123"></body></html>');
+    $document = HTMLDocument::createFromString('<html><body><embed src="http://example.com/a.swf"><embed src="http://www.youtube.com/v/abc123"></body></html>', LIBXML_NOERROR);
 
     (new ConvertYoutubeEmbedToUrl)->apply($document);
 

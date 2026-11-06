@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMXPath;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\XPath;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -22,13 +23,15 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class RenameBoldToStrong implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
         $bolds = [];
         foreach (XpathNodes::query($xpath, '//b') as $element) {
-            if ($element instanceof DOMElement) {
+            // The query selects only elements, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
+            if ($element instanceof Element) {
                 $bolds[] = $element;
             }
         }
@@ -40,10 +43,12 @@ final class RenameBoldToStrong implements Rule
                 $strong->setAttribute($attr->name, $attr->value);
             }
 
-            while ($bold->firstChild instanceof \DOMNode) {
+            while ($bold->firstChild instanceof Node) {
                 $strong->appendChild($bold->firstChild);
             }
 
+            // A bold found in the document always has a parent.
+            // @pest-mutate-ignore: RemoveNullSafeOperator
             $bold->parentNode?->replaceChild($strong, $bold);
         }
     }
