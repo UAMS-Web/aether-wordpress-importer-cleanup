@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+# Resume validates the snapshot; installation belongs only in setup.
+if ! command -v php >/dev/null 2>&1 || ! command -v composer >/dev/null 2>&1 \
+    || [[ ! -r vendor/autoload.php ]]; then
+    echo 'Orb dependencies are missing; run .agents/setup.' >&2
+    exit 1
+fi
+if ! php -r 'exit(PHP_MAJOR_VERSION === 8 && PHP_MINOR_VERSION === 4 && extension_loaded("pcov") && ini_get("pcov.enabled") ? 0 : 1);'; then
+    echo 'PHP 8.4 with enabled PCOV is required; run .agents/setup.' >&2
+    exit 1
+fi
+composer check-platform-reqs --no-interaction
+echo 'Orb toolchain is ready.'
