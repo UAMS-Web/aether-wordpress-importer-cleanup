@@ -8,6 +8,7 @@ use Dom\Element;
 use Dom\HTMLDocument;
 use Dom\Node;
 use Dom\Text;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -51,11 +52,7 @@ final class StripLeadingDateLine implements Rule
         if ($first instanceof Text) {
             $this->stripDateFrom($first);
             $this->trimLeadingWhitespaceTextNodes($body);
-
-            return;
-        }
-
-        if ($first instanceof Element && $first->localName === 'p') {
+        } elseif ($first instanceof Element && $first->localName === 'p') {
             $leadingText = $this->firstNonWhitespaceChild($first);
 
             if (! $leadingText instanceof Text) {
@@ -75,13 +72,15 @@ final class StripLeadingDateLine implements Rule
 
     private function stripDateFrom(Text $textNode): void
     {
-        if (preg_match(self::DATE_PATTERN, (string) $textNode->textContent, $matches) !== 1) {
+        if (preg_match(self::DATE_PATTERN, NodeText::content($textNode), $matches) !== 1) {
             return;
         }
 
-        $remainder = substr((string) $textNode->textContent, strlen($matches[0]));
+        $remainder = substr(NodeText::content($textNode), strlen($matches[0]));
 
         if (trim($remainder) === '') {
+            // A text node read from a parent always has one.
+            // @pest-mutate-ignore: RemoveNullSafeOperator
             $textNode->parentNode?->removeChild($textNode);
         } else {
             $textNode->nodeValue = $remainder;
@@ -92,7 +91,7 @@ final class StripLeadingDateLine implements Rule
     {
         $cursor = $parent->firstChild;
 
-        while ($cursor instanceof Text && trim((string) $cursor->textContent) === '') {
+        while ($cursor instanceof Text && trim(NodeText::content($cursor)) === '') {
             $cursor = $cursor->nextSibling;
         }
 
@@ -103,7 +102,7 @@ final class StripLeadingDateLine implements Rule
     {
         $cursor = $parent->firstChild;
 
-        while ($cursor instanceof Text && trim((string) $cursor->textContent) === '') {
+        while ($cursor instanceof Text && trim(NodeText::content($cursor)) === '') {
             $toRemove = $cursor;
             $cursor = $cursor->nextSibling;
             $parent->removeChild($toRemove);
@@ -116,7 +115,7 @@ final class StripLeadingDateLine implements Rule
             // The paragraph was read by its first non-whitespace child, so a whitespace text child is never followed by
             // another child after the date is stripped: continuing or breaking returns the same result.
             // @pest-mutate-ignore: ContinueToBreak
-            if ($child instanceof Text && trim((string) $child->textContent) === '') {
+            if ($child instanceof Text && trim(NodeText::content($child)) === '') {
                 continue;
             }
 

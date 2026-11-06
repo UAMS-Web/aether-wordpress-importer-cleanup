@@ -8,6 +8,7 @@ use Dom\Element;
 use Dom\HTMLDocument;
 use Dom\Node;
 use Dom\Text;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -68,7 +69,7 @@ final class AddMissingCaptionAttributes implements Rule
     private function walk(Node $node, bool &$inCaption): void
     {
         if ($node instanceof Text) {
-            $text = $node->nodeValue ?? '';
+            $text = NodeText::content($node);
             $rewritten = $this->rewriteTextNode($text, $inCaption);
             if ($rewritten !== $text) {
                 $node->nodeValue = $rewritten;
@@ -111,7 +112,7 @@ final class AddMissingCaptionAttributes implements Rule
         $pos = 0;
         $len = strlen($text);
 
-        while ($pos < $len) {
+        while ($pos !== $len) {
             $openerAt = strpos($text, '[caption', $pos);
             $closerAt = strpos($text, '[/caption]', $pos);
 
@@ -124,6 +125,8 @@ final class AddMissingCaptionAttributes implements Rule
                 return $out;
             }
 
+            // The opener and closer markers cannot start at the same offset, so the comparison never ties.
+            // @pest-mutate-ignore: SmallerToSmallerOrEqual
             if ($nextOpener && (! $nextCloser || $openerAt < $closerAt)) {
                 $out .= substr($text, $pos, $openerAt - $pos);
 
@@ -169,12 +172,16 @@ final class AddMissingCaptionAttributes implements Rule
         $hasAlign = preg_match('/(?<![A-Za-z0-9_-])align\s*=/i', $body) === 1;
         $hasWidth = preg_match('/(?<![A-Za-z0-9_-])width\s*=/i', $body) === 1;
 
+        // With all three present nothing is prepended, so the rebuilt opener equals the original.
+        // @pest-mutate-ignore: RemoveEarlyReturn
         if ($hasId && $hasAlign && $hasWidth) {
             return $opener;
         }
 
         $prepended = '';
         if (! $hasId) {
+            // The id default is prepended first, onto an empty string, so assigning it equals appending it.
+            // @pest-mutate-ignore: ConcatEqualToEqual
             $prepended .= ' id=""';
         }
 

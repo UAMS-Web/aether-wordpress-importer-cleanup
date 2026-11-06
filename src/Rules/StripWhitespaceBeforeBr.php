@@ -8,6 +8,7 @@ use Dom\Element;
 use Dom\HTMLDocument;
 use Dom\Text;
 use Dom\XPath;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -34,6 +35,7 @@ final class StripWhitespaceBeforeBr implements Rule
         foreach (XpathNodes::query($xpath, '//br') as $br) {
             // //br yields only elements, so the guard only narrows the type and the continue is unreachable.
             // @pest-mutate-ignore: ContinueToBreak
+            // @pest-mutate-ignore: InstanceOfToTrue
             if (! $br instanceof Element) {
                 continue;
             }
@@ -44,7 +46,7 @@ final class StripWhitespaceBeforeBr implements Rule
                 continue;
             }
 
-            $prev->nodeValue = rtrim($prev->nodeValue ?? '', " \t\n\r");
+            $prev->nodeValue = rtrim(NodeText::content($prev), " \t\n\r");
         }
     }
 }

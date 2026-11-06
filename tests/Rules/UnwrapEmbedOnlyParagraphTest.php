@@ -107,6 +107,7 @@ test('unwrap embed only paragraph leaves other paragraphs alone', function (arra
     'text and embed' => [['x', 'embed']],
     'element and embed' => [['b', 'embed']],
     'comment and embed' => [['comment', 'embed']],
+    'embed and element' => [['embed', 'b']],
 ]);
 
 test('unwrap embed only paragraph matches an embed created with an upper case name, which an HTML document lowercases', function () {

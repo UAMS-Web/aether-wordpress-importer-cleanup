@@ -8,6 +8,7 @@ use Dom\Element;
 use Dom\HTMLDocument;
 use Dom\Node;
 use Dom\XPath;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -54,7 +55,7 @@ final class ConvertYoutubeEmbedToUrl implements Rule
                 continue;
             }
 
-            $videoId = $this->extractVideoId(($embed->getAttribute('src') ?? ''));
+            $videoId = $this->extractVideoId(NodeText::attribute($embed, 'src'));
             if ($videoId === null) {
                 continue;
             }

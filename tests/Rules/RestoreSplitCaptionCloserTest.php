@@ -77,3 +77,14 @@ test('restore split caption closer leaves other markup alone', function (string 
     'whitespace then element' => ['<p>a</p><p> <b>y</b></p>'],
     'empty paragraph' => ['<p>a</p><p></p>'],
 ]);
+
+test('restore split caption closer skips a whitespace text node that did not merge with the closer text', function () {
+    $document = Fixture::document('<p>a</p><p></p>');
+    $second = $document->getElementsByTagName('p')->item(1);
+    $second?->appendChild($document->createTextNode('  '));
+    $second?->appendChild($document->createTextNode('[/caption]b'));
+
+    (new RestoreSplitCaptionCloser)->apply($document);
+
+    expect(Fixture::bodyHtml($document))->toBe('<p>a[/caption]</p><p>  b</p>');
+});

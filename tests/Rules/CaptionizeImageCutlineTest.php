@@ -61,6 +61,7 @@ test('an image paired with a cutline becomes a caption shortcode', function (str
     'E right attr' => ['<p align="right"><img src="a" class="x" style="float:left"> Cap text</p>', "\n[caption align=\"alignright\"]<img src=\"a\"> Cap text[/caption]\n"],
     'E left via style with br' => ['<p style="text-align: left"><img src="a" alt="b" width="3" height="4"><br>Cap</p>', "\n[caption align=\"alignleft\"]<img src=\"a\" alt=\"b\" width=\"3\" height=\"4\"> Cap[/caption]\n"],
     'E uppercase attr' => ['<p align="RIGHT"><img src="a"> Cap</p>', "\n[caption align=\"alignright\"]<img src=\"a\"> Cap[/caption]\n"],
+    'C image alone in its paragraph' => ['<p><img src="a"></p><div class="cutline">Cap</div>', '[caption]<img src="a"> Cap[/caption]'],
     'E leading whitespace' => ['<p align="right">   <img src="a"> Cap</p>', "\n[caption align=\"alignright\"]<img src=\"a\"> Cap[/caption]\n"],
     'E several breaks' => ['<p align="right"><img src="a"><br>One<br>Two</p>', "\n[caption align=\"alignright\"]<img src=\"a\"> One Two[/caption]\n"],
     'E style no spaces' => ['<p style="text-align:right"><img src="a"> Cap</p>', "\n[caption align=\"alignright\"]<img src=\"a\"> Cap[/caption]\n"],
@@ -112,6 +113,12 @@ test('an image paired with a cutline becomes a caption shortcode', function (str
 test('markup that does not match a cutline pattern is left alone', function (string $html) {
     expect(captionizeBody($html))->toBe($html);
 })->with([
+    'C text after the image' => ['<p><img src="a">x</p><div class="cutline">Cap</div>'],
+    'C element before the image after whitespace' => ['<p> <b>x</b><img src="a"></p><div class="cutline">Cap</div>'],
+    'C element after the image' => ['<p><img src="a"><b>x</b></p><div class="cutline">Cap</div>'],
+    'C element after a break' => ['<p><br><b>x</b><img src="a"></p><div class="cutline">Cap</div>'],
+    'E comment between image and break' => ['<p align="right"><img src="a"><!-- c --><br>text</p>'],
+    'F no text' => ['<table><tbody><tr><td><img src="a"><br></td></tr></tbody></table>'],
     'E non-img first' => ['<p align="right">x<img src="a"> Cap</p>'],
     'E element in text' => ['<p align="right"><img src="a"> Cap <b>x</b></p>'],
     'E no text' => ['<p align="right"><img src="a"></p>'],
@@ -167,3 +174,13 @@ test('markup that does not match a cutline pattern is left alone', function (str
     'E empty aligned paragraph' => ['<p align="right"></p>'],
     'B first child is not the cutline' => ['<img src="a"><p><b>x</b><span class="cutline">Cap.</span></p>'],
 ]);
+
+test('a cell caption joins every text node that follows the break', function () {
+    $document = Fixture::document('<table><tbody><tr><td><img src="a"><br>one</td></tr></tbody></table>');
+    $cell = Fixture::first($document, 'td');
+    $cell->appendChild($document->createTextNode('two'));
+
+    (new CaptionizeImageCutline)->apply($document);
+
+    expect(Fixture::bodyHtml($document))->toBe('<table><tbody><tr><td>[caption]<img src="a"> onetwo[/caption]</td></tr></tbody></table>');
+});

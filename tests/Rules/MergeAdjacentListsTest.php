@@ -54,6 +54,16 @@ $mergeLists = function (string $html): string {
     return $document->saveHtml($body);
 };
 
+test('three adjacent lists merge into the first', function () use ($mergeLists) {
+    expect($mergeLists('<ul><li>a</li></ul><ul><li>b</li></ul><ul><li>c</li></ul>'))
+        ->toBe('<body><ul><li>a</li><li>b</li><li>c</li></ul></body>');
+});
+
+test('an empty first item of the next list is kept', function () use ($mergeLists) {
+    expect($mergeLists('<ul><li>a</li></ul><ul><li></li><li>b</li></ul>'))
+        ->toBe('<body><ul><li>a</li><li></li><li>b</li></ul></body>');
+});
+
 test('adjacent unordered and ordered lists each merge', function (string $tag) use ($mergeLists) {
     expect($mergeLists("<{$tag}><li>a</li></{$tag}><{$tag}><li>b</li></{$tag}>"))
         ->toBe("<body><{$tag}><li>a</li><li>b</li></{$tag}></body>");

@@ -137,3 +137,13 @@ test('normalize city dateline ignores a document without a body', function () {
 
     expect($document->documentElement)->toBeNull();
 });
+
+test('normalize city dateline treats configured city names literally', function () {
+    $document = Fixture::document('A.B - x');
+    (new NormalizeCityDateline(['A.B']))->apply($document);
+    expect(Fixture::bodyHtml($document))->toBe("A.B, Ark. \u{2014} x");
+
+    $other = Fixture::document('AXB - x');
+    (new NormalizeCityDateline(['A.B']))->apply($other);
+    expect(Fixture::bodyHtml($other))->toBe('AXB - x');
+});

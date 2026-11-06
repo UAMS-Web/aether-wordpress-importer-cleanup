@@ -8,6 +8,7 @@ use Dom\Element;
 use Dom\HTMLDocument;
 use Dom\Node;
 use Dom\Text;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -34,7 +35,7 @@ final class StripLeadingBreaks implements Rule
         }
 
         while (($first = $body->firstChild) instanceof Node) {
-            if ($first instanceof Text && mb_trim($first->nodeValue ?? '') === '') {
+            if ($first instanceof Text && mb_trim(NodeText::content($first)) === '') {
                 $body->removeChild($first);
 
                 continue;

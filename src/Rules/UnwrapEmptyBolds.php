@@ -9,6 +9,7 @@ use Dom\HTMLDocument;
 use Dom\Node;
 use Dom\Text;
 use Dom\XPath;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -35,6 +36,8 @@ final class UnwrapEmptyBolds implements Rule
 
         $bolds = [];
         foreach (XpathNodes::query($xpath, '//b') as $element) {
+            // The query selects only elements, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($element instanceof Element) {
                 $bolds[] = $element;
             }
@@ -48,6 +51,7 @@ final class UnwrapEmptyBolds implements Rule
             $parent = $bold->parentNode;
             // A b element found by XPath always has a parent, so the guard only narrows the type and the continue is unreachable.
             // @pest-mutate-ignore: ContinueToBreak
+            // @pest-mutate-ignore: InstanceOfToTrue
             if (! $parent instanceof Node) {
                 continue;
             }
@@ -67,7 +71,7 @@ final class UnwrapEmptyBolds implements Rule
                 return false;
             }
 
-            if ($child instanceof Text && trim((string) $child->textContent) !== '') {
+            if ($child instanceof Text && trim(NodeText::content($child)) !== '') {
                 return false;
             }
         }

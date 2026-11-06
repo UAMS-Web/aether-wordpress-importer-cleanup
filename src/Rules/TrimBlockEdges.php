@@ -9,6 +9,7 @@ use Dom\HTMLDocument;
 use Dom\Node;
 use Dom\Text;
 use Dom\XPath;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -47,6 +48,8 @@ final class TrimBlockEdges implements Rule
 
         $blocks = [];
         foreach (XpathNodes::query($xpath, $query) as $block) {
+            // The query selects only elements, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($block instanceof Element) {
                 $blocks[] = $block;
             }
@@ -81,18 +84,18 @@ final class TrimBlockEdges implements Rule
 
         $first = $block->firstChild;
         if ($first instanceof Text) {
-            $first->nodeValue = mb_ltrim($first->nodeValue ?? '');
+            $first->nodeValue = mb_ltrim(NodeText::content($first));
         }
 
         $last = $block->lastChild;
         if ($last instanceof Text) {
-            $last->nodeValue = mb_rtrim($last->nodeValue ?? '');
+            $last->nodeValue = mb_rtrim(NodeText::content($last));
         }
     }
 
     private function isStrippable(Node $node): bool
     {
-        if ($node instanceof Text && mb_trim($node->nodeValue ?? '') === '') {
+        if ($node instanceof Text && mb_trim(NodeText::content($node)) === '') {
             return true;
         }
 

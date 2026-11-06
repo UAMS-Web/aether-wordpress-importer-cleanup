@@ -7,6 +7,7 @@ namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 use Dom\HTMLDocument;
 use Dom\Text;
 use Dom\XPath;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -44,14 +45,17 @@ final class TrimLineEdges implements Rule
         foreach (XpathNodes::query($xpath, '//text()') as $textNode) {
             // //text() yields only text nodes, so the guard only narrows the type and the continue is unreachable.
             // @pest-mutate-ignore: ContinueToBreak
+            // @pest-mutate-ignore: InstanceOfToTrue
             if (! $textNode instanceof Text) {
                 continue;
             }
 
+            // preg_replace returns null only when PCRE fails, and null empties a node exactly as an empty string does.
+            // @pest-mutate-ignore: RemoveStringCast
             $textNode->nodeValue = (string) preg_replace(
                 '/[ \t\x{00A0}]+\n|\n[ \t\x{00A0}]+/u',
                 "\n",
-                $textNode->nodeValue ?? '',
+                NodeText::content($textNode),
             );
         }
     }

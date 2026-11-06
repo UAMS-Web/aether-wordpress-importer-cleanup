@@ -106,3 +106,18 @@ test('unwrap single cell table matches child element names regardless of case', 
     expect($body->getElementsByTagName('table')->length)->toBe(0)
         ->and(trim((string) $body->textContent))->toBe('a');
 });
+
+test('unwrap single cell table keeps a table that has both a body and direct rows', function () {
+    $document = Fixture::document('<table><tbody><tr><td>a</td></tr></tbody></table>');
+    $table = Fixture::first($document, 'table');
+    $row = $document->createElement('tr');
+    $cell = $document->createElement('td');
+    $cell->appendChild($document->createTextNode('b'));
+    $row->appendChild($cell);
+    $table->appendChild($row);
+    $before = Fixture::bodyHtml($document);
+
+    (new UnwrapSingleCellTable)->apply($document);
+
+    expect(Fixture::bodyHtml($document))->toBe($before);
+});

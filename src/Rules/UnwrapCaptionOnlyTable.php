@@ -9,6 +9,7 @@ use Dom\HTMLDocument;
 use Dom\Node;
 use Dom\Text;
 use Dom\XPath;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -82,7 +83,7 @@ final class UnwrapCaptionOnlyTable implements Rule
     {
         $captionCells = 0;
         foreach ($table->getElementsByTagName('td') as $td) {
-            $trimmed = mb_trim((string) $td->textContent);
+            $trimmed = mb_trim(NodeText::content($td));
 
             if ($trimmed === '' && $this->isVisuallyEmpty($td)) {
                 continue;
@@ -150,14 +151,14 @@ final class UnwrapCaptionOnlyTable implements Rule
         }
 
         foreach ($tds as $td) {
-            if (mb_trim((string) $td->textContent) === '' && $this->isVisuallyEmpty($td)) {
+            if (mb_trim(NodeText::content($td)) === '' && $this->isVisuallyEmpty($td)) {
                 continue;
             }
 
             $parent->insertBefore($document->createTextNode("\n"), $table);
             while ($td->firstChild instanceof Node) {
                 $child = $td->firstChild;
-                if ($child instanceof Text && mb_trim($child->nodeValue ?? '') === '') {
+                if ($child instanceof Text && mb_trim(NodeText::content($child)) === '') {
                     $td->removeChild($child);
 
                     continue;

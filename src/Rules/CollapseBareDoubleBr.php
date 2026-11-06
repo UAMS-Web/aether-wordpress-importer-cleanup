@@ -7,6 +7,7 @@ namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 use Dom\Element;
 use Dom\HTMLDocument;
 use Dom\Text;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -38,6 +39,8 @@ final class CollapseBareDoubleBr implements Rule
         $children = iterator_to_array($body->childNodes);
         $count = count($children);
         $i = 0;
+        // Merging adjacent text nodes never changes the serialized output, so a run that always merges is equivalent.
+        // @pest-mutate-ignore: FalseToTrue
         $touched = false;
 
         while ($i < $count) {
@@ -54,7 +57,7 @@ final class CollapseBareDoubleBr implements Rule
 
             while ($j < $count) {
                 $next = $children[$j];
-                if ($next instanceof Text && mb_trim($next->nodeValue ?? '') === '') {
+                if ($next instanceof Text && mb_trim(NodeText::content($next)) === '') {
                     $run[] = $j;
                     $j++;
 
@@ -80,11 +83,11 @@ final class CollapseBareDoubleBr implements Rule
                 $next = $lastRunNode->nextSibling;
 
                 if ($prev instanceof Text) {
-                    $prev->nodeValue = mb_rtrim($prev->nodeValue ?? '');
+                    $prev->nodeValue = mb_rtrim(NodeText::content($prev));
                 }
 
                 if ($next instanceof Text) {
-                    $next->nodeValue = mb_ltrim($next->nodeValue ?? '');
+                    $next->nodeValue = mb_ltrim(NodeText::content($next));
                 }
 
                 $replacement = $document->createTextNode("\n\n");

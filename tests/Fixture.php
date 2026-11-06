@@ -59,4 +59,17 @@ final class Fixture
 
         return $element;
     }
+
+    /**
+     * The first `$tag` element in `$document`, or a failure when there is none.
+     */
+    public static function first(HTMLDocument $document, string $tag): Element
+    {
+        $found = $document->getElementsByTagName($tag)->item(0);
+        if (! $found instanceof Element) {
+            throw new RuntimeException("No <{$tag}> element in the fixture document.");
+        }
+
+        return $found;
+    }
 }

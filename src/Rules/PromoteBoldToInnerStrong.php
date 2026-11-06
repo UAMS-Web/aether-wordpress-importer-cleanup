@@ -9,6 +9,7 @@ use Dom\HTMLDocument;
 use Dom\Node;
 use Dom\Text;
 use Dom\XPath;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -50,6 +51,8 @@ final class PromoteBoldToInnerStrong implements Rule
         // Snapshot first; we mutate the tree as we iterate.
         $bolds = [];
         foreach (XpathNodes::query($xpath, '//b') as $element) {
+            // The query selects only elements, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($element instanceof Element) {
                 $bolds[] = $element;
             }
@@ -75,6 +78,7 @@ final class PromoteBoldToInnerStrong implements Rule
             $parent = $bold->parentNode;
             // A b element found by XPath always has a parent, so the guard only narrows the type.
             // @pest-mutate-ignore: ContinueToBreak
+            // @pest-mutate-ignore: InstanceOfToTrue
             if (! $parent instanceof Node) {
                 continue;
             }
@@ -89,6 +93,8 @@ final class PromoteBoldToInnerStrong implements Rule
 
             // Drop the orphan <b> and any whitespace between it and <p>.
             $cursor = $bold->nextSibling;
+            // The paragraph is a later sibling, so the walk reaches it before running out of siblings.
+            // @pest-mutate-ignore: InstanceOfToTrue
             while ($cursor instanceof Node && $cursor !== $paragraph) {
                 $toRemove = $cursor;
                 $cursor = $cursor->nextSibling;
@@ -112,7 +118,7 @@ final class PromoteBoldToInnerStrong implements Rule
                 }
 
                 $paragraphs++;
-            } elseif ($child instanceof Text && trim((string) $child->textContent) !== '') {
+            } elseif ($child instanceof Text && trim(NodeText::content($child)) !== '') {
                 return false;
             }
         }
@@ -136,7 +142,6 @@ final class PromoteBoldToInnerStrong implements Rule
         $document = $bold->ownerDocument;
         // An element in a document always has an owner document, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
-        // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $document instanceof HTMLDocument) {
             return;
         }
@@ -176,7 +181,7 @@ final class PromoteBoldToInnerStrong implements Rule
                 return false;
             }
 
-            if ($child instanceof Text && trim((string) $child->textContent) !== '') {
+            if ($child instanceof Text && trim(NodeText::content($child)) !== '') {
                 return false;
             }
         }
@@ -188,7 +193,7 @@ final class PromoteBoldToInnerStrong implements Rule
     {
         $next = $node->nextSibling;
 
-        while ($next instanceof Text && trim((string) $next->textContent) === '') {
+        while ($next instanceof Text && trim(NodeText::content($next)) === '') {
             $next = $next->nextSibling;
         }
 

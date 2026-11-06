@@ -8,6 +8,7 @@ use Dom\Element;
 use Dom\HTMLDocument;
 use Dom\Node;
 use Dom\Text;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -69,7 +70,7 @@ final class UnwrapEmbedOnlyParagraph implements Rule
                 continue;
             }
 
-            if ($child instanceof Text && trim($child->nodeValue ?? '') === '') {
+            if ($child instanceof Text && trim(NodeText::content($child)) === '') {
                 continue;
             }
 
@@ -103,9 +104,8 @@ final class UnwrapEmbedOnlyParagraph implements Rule
         $embeds = [];
         foreach ($p->childNodes as $child) {
             // Every element child of a qualifying paragraph is an embed or a br, and a text child never has the node name
-            // embed, so the type check is redundant; libxml lowercases HTML node names, so strtolower changes nothing.
+            // embed, so the type check is redundant.
             // @pest-mutate-ignore: InstanceOfToTrue
-            // @pest-mutate-ignore: UnwrapStrtolower
             if ($child instanceof Element && $child->localName === 'embed') {
                 $embeds[] = $child;
             }

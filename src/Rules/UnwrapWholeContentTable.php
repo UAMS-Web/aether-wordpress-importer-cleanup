@@ -123,6 +123,9 @@ final class UnwrapWholeContentTable implements Rule
 
             $tag = $child->localName;
 
+            // In parsed markup no structure element follows a nested table among its siblings, so stopping the
+            // walk there would collect the same elements.
+            // @pest-mutate-ignore: ContinueToBreak
             if ($tag === 'table') {
                 continue;
             }

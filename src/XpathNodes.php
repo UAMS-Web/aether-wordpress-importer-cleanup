@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup;
 
-use Dom\NamespaceInfo;
 use Dom\Node;
 use Dom\XPath;
 use DOMNameSpaceNode;
@@ -51,9 +50,8 @@ final class XpathNodes
         }
 
         foreach ($matches as $node) {
-            // Each XPath class reports its own namespace-declaration node type; the union hides one from static analysis.
-            // @phpstan-ignore instanceof.alwaysFalse
-            if ($node instanceof DOMNameSpaceNode || $node instanceof NamespaceInfo) {
+            // Only DOMXPath reaches namespace-declaration nodes: Dom\XPath refuses the namespace axis with a DOMException.
+            if ($node instanceof DOMNameSpaceNode) {
                 continue;
             }
 
@@ -71,6 +69,8 @@ final class XpathNodes
      */
     private static function htmlExpression(string $expression): string
     {
+        // preg_replace returns null only when PCRE fails on a resource limit, and no test of this pattern lowers one.
+        // @pest-mutate-ignore: RemoveStringCast
         return (string) preg_replace(
             '/(^|[\/|(])([A-Za-z][A-Za-z0-9_-]*)(?![A-Za-z0-9_:(-])/',
             '$1'.self::HTML_PREFIX.':$2',

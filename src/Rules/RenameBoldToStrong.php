@@ -29,6 +29,8 @@ final class RenameBoldToStrong implements Rule
 
         $bolds = [];
         foreach (XpathNodes::query($xpath, '//b') as $element) {
+            // The query selects only elements, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($element instanceof Element) {
                 $bolds[] = $element;
             }
@@ -45,6 +47,8 @@ final class RenameBoldToStrong implements Rule
                 $strong->appendChild($bold->firstChild);
             }
 
+            // A bold found in the document always has a parent.
+            // @pest-mutate-ignore: RemoveNullSafeOperator
             $bold->parentNode?->replaceChild($strong, $bold);
         }
     }

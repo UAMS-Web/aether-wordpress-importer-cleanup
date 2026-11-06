@@ -40,3 +40,17 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
 
     expect($actualAfter)->toBe($expectedAfter);
 })->with('fixturePairs');
+
+test('strip leading breaks removes alternating whitespace text and breaks', function () {
+    $document = Fixture::document('<p>x</p>');
+    $body = Fixture::first($document, 'body');
+    $paragraph = Fixture::first($document, 'p');
+    $body->insertBefore($document->createTextNode('  '), $paragraph);
+    $body->insertBefore($document->createElement('br'), $paragraph);
+    $body->insertBefore($document->createTextNode("\n"), $paragraph);
+    $body->insertBefore($document->createElement('br'), $paragraph);
+
+    (new StripLeadingBreaks)->apply($document);
+
+    expect(Fixture::bodyHtml($document))->toBe('<p>x</p>');
+});

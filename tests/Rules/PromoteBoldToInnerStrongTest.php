@@ -63,6 +63,7 @@ test('promote bold to inner strong rewrites matching markup', function (string $
     'two pairs' => ['<b></b><p>a</p><b></b><p>b</p>', '<p><strong>a</strong></p><p><strong>b</strong></p>'],
     'comment in b' => ['<b> <!-- c --> </b><p>x</p>', '<p><strong>x</strong></p>'],
     'p nested in b by an HTML5 parser' => ["<b>\n<p>x</p>\n</b>", "<p><strong>x</strong></p>\n"],
+    'comment after a p nested in b' => ['<b><p>x</p><!-- c --></b>', '<p><strong>x</strong></p><!-- c -->'],
     'two p nested in one b' => ['<b><p>a</p> <p>b</p></b>', '<p><strong>a</strong></p> <p><strong>b</strong></p>'],
     'p with attributes' => ['<b></b><p class="k">x</p>', '<p class="k"><strong>x</strong></p>'],
 ]);

@@ -64,6 +64,8 @@ test('captions are lifted out of their paragraph', function (string $html, strin
     'text after a closer becomes prose' => ['<p>[caption]x[/caption] tail</p>', "\n\n[caption]x[/caption]\n\n<p>tail</p>\n\n"],
     'leading whitespace around an element is trimmed' => ['<p>  <i>x</i>  [caption]c[/caption]</p>', "\n\n<p><i>x</i></p>\n\n[caption]c[/caption]\n\n"],
     'a caption spans text and elements' => ['<p>pre [caption]<img src="a"> a <b>b</b> c[/caption] post</p>', "\n\n<p>pre</p>\n\n[caption]<img src=\"a\"> a <b>b</b> c[/caption]\n\n<p>post</p>\n\n"],
+    'prose and caption share one text node' => ['<p>pre [caption id="1"]x[/caption] post</p>', "\n\n<p>pre</p>\n\n[caption id=\"1\"]x[/caption]\n\n<p>post</p>\n\n"],
+    'an empty element at the edge of prose is kept' => ['<p><i></i>x[caption]y[/caption]</p>', "\n\n<p><i></i>x</p>\n\n[caption]y[/caption]\n\n"],
     'an element after a caption starts prose' => ['<p>[caption]x[/caption]<b>y</b></p>', "\n\n[caption]x[/caption]\n\n<p><b>y</b></p>\n\n"],
     'text and elements share one prose chunk' => ['<p>one <b>two</b> three [caption]x[/caption]</p>', "\n\n<p>one <b>two</b> three</p>\n\n[caption]x[/caption]\n\n"],
     'markers inside child elements are not lifted' => ['<p><b>[caption]</b>x<b>[/caption]</b></p>', "\n\n<p><b>[caption]</b>x<b>[/caption]</b></p>\n\n"],
@@ -75,4 +77,12 @@ test('a paragraph with unbalanced markers is left alone', function () {
     (new LiftCaptionsOutOfParagraph)->apply($document);
 
     expect($document->saveHtml($document->getElementsByTagName('body')->item(0)))->toBe('<body><p>[caption]x</p></body>');
+});
+
+test('lifting leaves no whitespace text node at the edges of a prose paragraph', function () {
+    $document = Fixture::document('<p> <b>x</b> [caption]y[/caption]</p>');
+
+    (new LiftCaptionsOutOfParagraph)->apply($document);
+
+    expect($document->getElementsByTagName('p')->item(0)?->childNodes->length)->toBe(1);
 });

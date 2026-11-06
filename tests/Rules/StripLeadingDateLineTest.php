@@ -74,6 +74,9 @@ test('strip leading date line rewrites matching markup', function (string $html,
     'paragraph date only with whitespace' => ["<p>Nov. 12, 2002</p>\n  <p>The foo.</p>", '<p>The foo.</p>'],
     'whitespace before paragraph' => ["  \n <p>Nov. 12, 2002</p> \n <p>The foo.</p>", '<p>The foo.</p>'],
     'paragraph with markup after' => ['<p>Nov. 12, 2002<b>x</b></p>', '<p><b>x</b></p>'],
+    'paragraph with empty markup after' => ['<p>Nov. 12, 2002<b></b></p>', '<p><b></b></p>'],
+    'date then spaces' => ['Nov. 12, 2002   ', ''],
+    'paragraph date then spaces then markup' => ['<p>Nov. 12, 2002   <b>x</b></p>', '<p><b>x</b></p>'],
     'paragraph with leading whitespace' => ['<p>  Nov. 12, 2002 The foo.</p>', '<p> The foo.</p>'],
     'one digit day' => ['Nov. 2, 2002 The foo.', ' The foo.'],
     'sept' => ['Sept. 4, 2002 x', ' x'],
@@ -119,4 +122,26 @@ test('strip leading date line ignores a document without a body', function () {
     (new StripLeadingDateLine)->apply($document);
 
     expect($document->documentElement)->toBeNull();
+});
+
+test('strip leading date line drops whitespace text left in front of a removed date', function () {
+    $document = Fixture::document('');
+    $body = Fixture::first($document, 'body');
+    $body->appendChild($document->createTextNode('  '));
+    $body->appendChild($document->createTextNode('Nov. 12, 2002'));
+
+    (new StripLeadingDateLine)->apply($document);
+
+    expect(Fixture::bodyHtml($document))->toBe('');
+});
+
+test('strip leading date line removes a paragraph left holding only whitespace text', function () {
+    $document = Fixture::document('<p></p><p>x</p>');
+    $paragraph = Fixture::first($document, 'p');
+    $paragraph->appendChild($document->createTextNode('Nov. 12, 2002'));
+    $paragraph->appendChild($document->createTextNode('  '));
+
+    (new StripLeadingDateLine)->apply($document);
+
+    expect(Fixture::bodyHtml($document))->toBe('<p>x</p>');
 });

@@ -8,6 +8,7 @@ use Dom\Element;
 use Dom\HTMLDocument;
 use Dom\Node;
 use Dom\XPath;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -73,7 +74,7 @@ final class UnwrapCaptionOnlyParagraph implements Rule
 
     private function isCaptionOnlyParagraph(Element $p): bool
     {
-        $text = mb_trim((string) $p->textContent);
+        $text = mb_trim(NodeText::content($p));
 
         if (! str_starts_with($text, '[caption')) {
             return false;

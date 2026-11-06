@@ -67,6 +67,7 @@ test('breaks and whitespace runs inside a caption collapse to one space and outs
     'malformed opener after text' => ['pre  x [caption id="1"  a   b', 'pre  x [caption id="1"  a   b'],
     'markup inside a caption' => ['[caption]<b>a   b</b><i>c<br>d</i>[/caption] e  f', '[caption]<b>a b</b><i>c d</i>[/caption] e  f'],
     'two captions' => ['[caption]a  b[/caption] m  n [caption]c  d[/caption]', '[caption]a b[/caption] m  n [caption]c d[/caption]'],
+    'comment inside a caption' => ['[caption]a<!-- c -->b<br>c[/caption]', '[caption]a<!-- c -->b c[/caption]'],
     'every whitespace kind' => ["[caption]a\t\r\n  b[/caption]", '[caption]a b[/caption]'],
 ]);
 

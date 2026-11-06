@@ -8,6 +8,7 @@ use Dom\Element;
 use Dom\HTMLDocument;
 use Dom\Node;
 use Dom\Text;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -68,17 +69,14 @@ final class StripOrdinalSupTags implements Rule
 
     private function qualifies(Element $sup): bool
     {
-        $text = strtolower(mb_trim((string) $sup->textContent));
+        $text = strtolower(mb_trim(NodeText::content($sup)));
         if (! in_array($text, self::ordinalSuffixes(), true)) {
             return false;
         }
 
         $previousChar = $this->previousCharacter($sup);
-        if ($previousChar === null) {
-            return false;
-        }
 
-        return ctype_digit($previousChar);
+        return $previousChar !== null && ctype_digit($previousChar);
     }
 
     /**
@@ -92,7 +90,7 @@ final class StripOrdinalSupTags implements Rule
     {
         $previous = $sup->previousSibling;
         while ($previous instanceof Text) {
-            $value = (string) $previous->textContent;
+            $value = NodeText::content($previous);
             if ($value !== '') {
                 return substr($value, -1);
             }

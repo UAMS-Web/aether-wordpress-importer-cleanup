@@ -9,6 +9,7 @@ use Dom\HTMLDocument;
 use Dom\Node;
 use Dom\Text;
 use Dom\XPath;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -48,6 +49,8 @@ final class LiftTrailingBr implements Rule
 
             $brs = [];
             foreach (XpathNodes::query($xpath, '//br') as $br) {
+                // The query selects only elements, so the guard only narrows the type.
+                // @pest-mutate-ignore: InstanceOfToTrue
                 if ($br instanceof Element) {
                     $brs[] = $br;
                 }
@@ -55,6 +58,8 @@ final class LiftTrailingBr implements Rule
 
             // Process trailing-most first so a chain of trailing `<br>`s
             // (or a nested case) collapses out one layer per pass.
+            // The order only saves passes: visiting forward lifts the same brs into the same positions, one layer later.
+            // @pest-mutate-ignore: UnwrapArrayReverse
             foreach (array_reverse($brs) as $br) {
                 if ($this->liftIfTrailing($br)) {
                     $changed = true;
@@ -69,6 +74,7 @@ final class LiftTrailingBr implements Rule
 
         // A br found by //br in an HTML body always has an element parent, so the guard only narrows the type.
         // @pest-mutate-ignore: FalseToTrue
+        // @pest-mutate-ignore: InstanceOfToTrue
         // @pest-mutate-ignore: RemoveEarlyReturn
         if (! $parent instanceof Element) {
             return false;
@@ -93,7 +99,7 @@ final class LiftTrailingBr implements Rule
 
         $this->dropFollowingWhitespace($br, $parent);
 
-        $parent->removeChild($br);
+        // insertBefore moves a node that is already attached, so no separate detach is needed.
         $grandparent->insertBefore($br, $parent->nextSibling);
 
         return true;
@@ -104,7 +110,7 @@ final class LiftTrailingBr implements Rule
         $cursor = $br->nextSibling;
 
         while ($cursor instanceof Node) {
-            if ($cursor instanceof Text && trim((string) $cursor->textContent) === '') {
+            if ($cursor instanceof Text && trim(NodeText::content($cursor)) === '') {
                 $cursor = $cursor->nextSibling;
 
                 continue;

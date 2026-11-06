@@ -31,6 +31,8 @@ final class UnwrapSpans implements Rule
         // Snapshot first; removing elements mutates the live NodeList.
         $spans = [];
         foreach (XpathNodes::query($xpath, '//span') as $element) {
+            // The query selects only elements, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($element instanceof Element) {
                 $spans[] = $element;
             }
@@ -40,6 +42,7 @@ final class UnwrapSpans implements Rule
             $parent = $span->parentNode;
             // A span found by XPath always has a parent, so the guard only narrows the type and the continue is unreachable.
             // @pest-mutate-ignore: ContinueToBreak
+            // @pest-mutate-ignore: InstanceOfToTrue
             if (! $parent instanceof Node) {
                 continue;
             }

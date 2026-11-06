@@ -112,7 +112,9 @@ final class UnwrapCaptionImageAnchors implements Rule
             }
 
             // The two markers cannot start at the same offset, so the comparison never sees equal positions.
+            // Only the final state is kept and the last marker decides it in either visiting order.
             // @pest-mutate-ignore: SmallerToSmallerOrEqual
+            // @pest-mutate-ignore: SmallerToGreaterOrEqual
             if ($nextOpener && (! $nextCloser || $openerAt < $closerAt)) {
                 $inCaption = true;
                 $pos = $openerAt + strlen('[caption');

@@ -259,4 +259,42 @@ test('apply handles PCRE exhaustion after a custom rule has produced a fragment'
     expect($actual)->toContain('<'.$element.'><![CDATA['.$expected.']]></'.$element.'>');
 })->with([
     'CRLF is one space without requiring regex collapse' => ['title', "first\r\nsecond", 'first second'],
+    'a lone LF is one space without requiring regex collapse' => ['title', "first\nsecond", 'first second'],
+    'a lone CR is one space without requiring regex collapse' => ['title', "first\rsecond", 'first second'],
 ]);
+
+test('apply writes line feeds for carriage returns that a rule leaves in content', function (): void {
+    $rule = new readonly class implements Rule
+    {
+        public function apply(HTMLDocument $document): void
+        {
+            $body = $document->getElementsByTagName('body')->item(0);
+            if ($body?->firstChild === null) {
+                $body?->appendChild($document->createTextNode("a\r\nb\rc"));
+            }
+        }
+    };
+
+    $actual = new Transform([$rule])->apply(
+        '<rss xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><item><content:encoded/></item></channel></rss>'
+    );
+
+    expect($actual)->toContain("<content:encoded><![CDATA[a\nb\nc]]></content:encoded>")
+        ->and($actual)->not->toContain("\r");
+});
+
+test('apply empties content and titles when PCRE is unusable from the start', function (): void {
+    $previousLimit = ini_get('pcre.backtrack_limit');
+    ini_set('pcre.backtrack_limit', '0');
+
+    try {
+        $actual = new Transform([])->apply(
+            '<rss xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><item><content:encoded><![CDATA[<p>x</p>]]></content:encoded><title>T</title></item></channel></rss>'
+        );
+    } finally {
+        ini_set('pcre.backtrack_limit', (string) $previousLimit);
+    }
+
+    expect($actual)->toContain('<content:encoded><![CDATA[]]></content:encoded>')
+        ->and($actual)->toContain('<title><![CDATA[T]]></title>');
+});

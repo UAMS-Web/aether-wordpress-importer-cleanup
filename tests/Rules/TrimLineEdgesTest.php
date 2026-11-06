@@ -71,3 +71,14 @@ test('trim line edges leaves other markup alone', function (string $html) {
     'no newline kept' => ['<p>a  b</p>'],
     'plain' => ['<p>a</p>'],
 ]);
+
+test('trim line edges merges adjacent text nodes before trimming', function () {
+    $document = Fixture::document('');
+    $body = Fixture::first($document, 'body');
+    $body->appendChild($document->createTextNode('a '));
+    $body->appendChild($document->createTextNode("\nb"));
+
+    (new TrimLineEdges)->apply($document);
+
+    expect(Fixture::bodyHtml($document))->toBe("a\nb");
+});

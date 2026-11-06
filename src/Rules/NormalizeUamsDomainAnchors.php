@@ -8,6 +8,7 @@ use Dom\Element;
 use Dom\HTMLDocument;
 use Dom\Node;
 use Dom\Text;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -77,7 +78,7 @@ final class NormalizeUamsDomainAnchors implements Rule
                 continue;
             }
 
-            $key = strtolower(mb_trim((string) $anchor->textContent));
+            $key = strtolower(mb_trim(NodeText::content($anchor)));
             if (! isset($canonical[$key])) {
                 continue;
             }

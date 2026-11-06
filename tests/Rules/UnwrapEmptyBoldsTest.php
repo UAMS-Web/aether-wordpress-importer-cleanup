@@ -60,6 +60,7 @@ test('unwrap empty bolds rewrites matching markup', function (string $html, stri
     'whitespace b' => ['<p>a<b>  </b>c</p>', '<p>a  c</p>'],
     'tab newline b' => ["<p>a<b>\t\n</b>c</p>", "<p>a\t\nc</p>"],
     'two b' => ['<p><b> </b>x<b>y</b><b></b></p>', '<p> x<b>y</b></p>'],
+    'comment only b' => ['<p>a<b><!-- c --></b>c</p>', '<p>a<!-- c -->c</p>'],
     'nested empty' => ['<p><b><b> </b></b></p>', '<p><b> </b></p>'],
 ]);
 

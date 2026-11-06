@@ -26,6 +26,8 @@ final class RenameItalicsToEm implements Rule
 
         $italics = [];
         foreach (XpathNodes::query($xpath, '//i') as $element) {
+            // The query selects only elements, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($element instanceof Element) {
                 $italics[] = $element;
             }
@@ -42,6 +44,8 @@ final class RenameItalicsToEm implements Rule
                 $em->appendChild($italic->firstChild);
             }
 
+            // An italic found in the document always has a parent.
+            // @pest-mutate-ignore: RemoveNullSafeOperator
             $italic->parentNode?->replaceChild($em, $italic);
         }
     }

@@ -73,3 +73,22 @@ test('a trailing br in the body is not lifted out of it', function () {
     $body = $document->getElementsByTagName('body')->item(0);
     expect($body?->getElementsByTagName('br')->length)->toBe(1);
 });
+
+test('lift trailing br lifts stacked and nested breaks all the way out', function (string $html, string $expected) {
+    $document = Fixture::document($html);
+
+    (new LiftTrailingBr)->apply($document);
+
+    expect(Fixture::bodyHtml($document))->toBe($expected);
+})->with([
+    'stacked' => ['<div><b>foo<br><br></b>x</div>', '<div><b>foo</b><br><br>x</div>'],
+    'nested' => ['<div><b>foo<i>bar<br></i></b>x</div>', '<div><b>foo<i>bar</i></b><br>x</div>'],
+]);
+
+test('lift trailing br leaves a break followed by an empty element', function () {
+    $document = Fixture::document('<div><b>foo<br><i></i></b></div>');
+
+    (new LiftTrailingBr)->apply($document);
+
+    expect(Fixture::bodyHtml($document))->toBe('<div><b>foo<br><i></i></b></div>');
+});

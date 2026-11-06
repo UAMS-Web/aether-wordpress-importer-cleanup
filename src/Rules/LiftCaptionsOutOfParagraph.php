@@ -9,6 +9,7 @@ use Dom\HTMLDocument;
 use Dom\Node;
 use Dom\Text;
 use Dom\XPath;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -78,6 +79,8 @@ final class LiftCaptionsOutOfParagraph implements Rule
 
         $candidates = [];
         foreach (XpathNodes::query($xpath, '//p') as $p) {
+            // //p yields only elements, so the type check only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($p instanceof Element && $this->paragraphHasBalancedCaptions($p)) {
                 $candidates[] = $p;
             }
@@ -90,7 +93,7 @@ final class LiftCaptionsOutOfParagraph implements Rule
 
     private function paragraphHasBalancedCaptions(Element $p): bool
     {
-        $text = (string) $p->textContent;
+        $text = NodeText::content($p);
         $openers = substr_count($text, '[caption');
         $closers = substr_count($text, '[/caption]');
 
@@ -128,6 +131,7 @@ final class LiftCaptionsOutOfParagraph implements Rule
         $document = $p->ownerDocument;
         // A paragraph taken from a loaded document always has an owner document, so the guard only narrows the type.
         // @pest-mutate-ignore: RemoveEarlyReturn
+        // @pest-mutate-ignore: InstanceOfToTrue
         if (! $document instanceof HTMLDocument) {
             return [];
         }
@@ -147,11 +151,11 @@ final class LiftCaptionsOutOfParagraph implements Rule
 
         foreach (iterator_to_array($p->childNodes) as $child) {
             if ($child instanceof Text) {
-                $text = $child->nodeValue ?? '';
+                $text = NodeText::content($child);
                 $pos = 0;
                 $len = strlen($text);
 
-                while ($pos < $len) {
+                while ($pos !== $len) {
                     if (! $inCaption) {
                         $openerAt = strpos($text, '[caption', $pos);
                         if ($openerAt === false) {
@@ -164,11 +168,12 @@ final class LiftCaptionsOutOfParagraph implements Rule
                             }
 
                             $currentNodes[] = $document->createTextNode($segment);
-                            $pos = $len;
 
-                            continue;
+                            break;
                         }
 
+                        // An empty segment would only add an empty text node, which the trim drops again.
+                        // @pest-mutate-ignore: GreaterToGreaterOrEqual
                         if ($openerAt > $pos) {
                             $segment = substr($text, $pos, $openerAt - $pos);
                             // The current type is always 'prose' while outside a caption (a closer resets it), so the flush never runs.
@@ -193,9 +198,8 @@ final class LiftCaptionsOutOfParagraph implements Rule
                     if ($closerAt === false) {
                         $segment = substr($text, $pos);
                         $currentNodes[] = $document->createTextNode($segment);
-                        $pos = $len;
 
-                        continue;
+                        break;
                     }
 
                     $end = $closerAt + strlen('[/caption]');
@@ -210,6 +214,8 @@ final class LiftCaptionsOutOfParagraph implements Rule
                 continue;
             }
 
+            // The query selects only elements, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($child instanceof Element) {
                 $tag = $child->localName;
 
@@ -262,13 +268,13 @@ final class LiftCaptionsOutOfParagraph implements Rule
             }
 
             if ($nodes !== [] && $nodes[0] instanceof Text) {
-                $nodes[0]->nodeValue = ltrim($nodes[0]->nodeValue ?? '');
+                $nodes[0]->nodeValue = ltrim(NodeText::content($nodes[0]));
             }
 
             if ($nodes !== []) {
                 $last = $nodes[count($nodes) - 1];
                 if ($last instanceof Text) {
-                    $last->nodeValue = rtrim($last->nodeValue ?? '');
+                    $last->nodeValue = rtrim(NodeText::content($last));
                 }
             }
 
@@ -282,7 +288,7 @@ final class LiftCaptionsOutOfParagraph implements Rule
 
     private function isWhitespaceTextNode(Node $node): bool
     {
-        return $node instanceof Text && trim($node->nodeValue ?? '') === '';
+        return $node instanceof Text && trim(NodeText::content($node)) === '';
     }
 
     /**
@@ -293,11 +299,14 @@ final class LiftCaptionsOutOfParagraph implements Rule
         $document = $p->ownerDocument;
         // A paragraph taken from a loaded document always has an owner document, so the guard only narrows the type.
         // @pest-mutate-ignore: RemoveEarlyReturn
+        // @pest-mutate-ignore: InstanceOfToTrue
         if (! $document instanceof HTMLDocument) {
             return;
         }
 
         $parent = $p->parentNode;
+        // A node reached from the body always has a parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
         if (! $parent instanceof Node) {
             return;
         }

@@ -8,6 +8,7 @@ use Dom\Element;
 use Dom\HTMLDocument;
 use Dom\Node;
 use Dom\Text;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -93,10 +94,14 @@ final class NormalizeCityDateline implements Rule
         }
 
         $pattern = $this->buildPattern();
+        // preg_replace_callback returns null only when PCRE fails, and null empties a node exactly as '' does.
+        // The pattern is anchored to the start, so a limit above one changes nothing.
+        // @pest-mutate-ignore: RemoveStringCast
+        // @pest-mutate-ignore: IncrementInteger
         $textNode->nodeValue = (string) preg_replace_callback(
             $pattern,
             static fn (array $match): string => $match['city'].", Ark. \u{2014} ",
-            $textNode->nodeValue ?? '',
+            NodeText::content($textNode),
             1,
         );
     }

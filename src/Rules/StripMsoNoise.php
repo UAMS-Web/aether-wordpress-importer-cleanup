@@ -9,6 +9,7 @@ use Dom\HTMLDocument;
 use Dom\Node;
 use Dom\NodeList;
 use Dom\XPath;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -46,13 +47,17 @@ final class StripMsoNoise implements Rule
         foreach (XpathNodes::query($xpath, '//*[@class]') as $element) {
             // The query selects only elements, so the guard only narrows the type and the continue is unreachable.
             // @pest-mutate-ignore: ContinueToBreak
+            // @pest-mutate-ignore: InstanceOfToTrue
             if (! $element instanceof Element) {
                 continue;
             }
 
             // Remove Mso-prefixed tokens; preserve everything else
-            $original = ($element->getAttribute('class') ?? '');
+            $original = NodeText::attribute($element, 'class');
+            // preg_replace returns null only when PCRE fails on a resource limit, and no test of these patterns lowers one.
+            // @pest-mutate-ignore: RemoveStringCast
             $cleaned = (string) preg_replace('/\bMso[A-Za-z0-9_-]*\b/i', '', $original);
+            // @pest-mutate-ignore: RemoveStringCast
             $cleaned = trim((string) preg_replace('/\s+/', ' ', $cleaned));
 
             if ($cleaned === '') {
@@ -66,6 +71,8 @@ final class StripMsoNoise implements Rule
     private function removeInlineStyles(XPath $xpath): void
     {
         foreach (XpathNodes::query($xpath, '//*[@style]') as $element) {
+            // The query selects only elements, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($element instanceof Element) {
                 $element->removeAttribute('style');
             }

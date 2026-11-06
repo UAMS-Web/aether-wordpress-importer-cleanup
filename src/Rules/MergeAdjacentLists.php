@@ -8,6 +8,7 @@ use Dom\Element;
 use Dom\HTMLDocument;
 use Dom\Node;
 use Dom\Text;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -85,13 +86,13 @@ final class MergeAdjacentLists implements Rule
 
     private function isBlankText(Node $node): bool
     {
-        return $node instanceof Text && mb_trim($node->nodeValue ?? '') === '';
+        return $node instanceof Text && mb_trim(NodeText::content($node)) === '';
     }
 
     private function merge(Element $list, Element $next): void
     {
         $firstChild = $next->firstChild;
-        if ($firstChild instanceof Text && mb_trim($firstChild->nodeValue ?? '') === '') {
+        if ($firstChild instanceof Text && mb_trim(NodeText::content($firstChild)) === '') {
             $next->removeChild($firstChild);
         }
 

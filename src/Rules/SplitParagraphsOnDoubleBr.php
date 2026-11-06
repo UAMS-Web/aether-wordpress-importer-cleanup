@@ -9,6 +9,7 @@ use Dom\HTMLDocument;
 use Dom\Node;
 use Dom\Text;
 use Dom\XPath;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -46,6 +47,8 @@ final class SplitParagraphsOnDoubleBr implements Rule
 
         $paragraphs = [];
         foreach (XpathNodes::query($xpath, '//p') as $element) {
+            // The query selects only elements, so the guard only narrows the type.
+            // @pest-mutate-ignore: InstanceOfToTrue
             if ($element instanceof Element) {
                 $paragraphs[] = $element;
             }
@@ -98,6 +101,8 @@ final class SplitParagraphsOnDoubleBr implements Rule
         }
 
         $parent = $paragraph->parentNode;
+        // A node reached from the body always has a parent, so the guard only narrows the type.
+        // @pest-mutate-ignore: InstanceOfToTrue
         if (! $parent instanceof Node) {
             return;
         }
@@ -149,12 +154,12 @@ final class SplitParagraphsOnDoubleBr implements Rule
         }
 
         if ($group !== [] && $group[0] instanceof Text) {
-            $group[0]->nodeValue = ltrim((string) $group[0]->textContent);
+            $group[0]->nodeValue = ltrim(NodeText::content($group[0]));
         }
 
         if ($group !== [] && $group[array_key_last($group)] instanceof Text) {
             $last = $group[array_key_last($group)];
-            $last->nodeValue = rtrim((string) $last->textContent);
+            $last->nodeValue = rtrim(NodeText::content($last));
         }
 
         return $group;
@@ -167,7 +172,7 @@ final class SplitParagraphsOnDoubleBr implements Rule
 
     private function isWhitespaceText(?Node $node): bool
     {
-        return $node instanceof Text && trim((string) $node->textContent) === '';
+        return $node instanceof Text && trim(NodeText::content($node)) === '';
     }
 
     /**

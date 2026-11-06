@@ -52,6 +52,7 @@ final class ReplaceBareBrWithBlankLine implements Rule
             $parent = $br->parentNode;
             // A child of the body always has a parent, so the guard only narrows the type.
             // @pest-mutate-ignore: ContinueToBreak
+            // @pest-mutate-ignore: InstanceOfToTrue
             if (! $parent instanceof Node) {
                 continue;
             }

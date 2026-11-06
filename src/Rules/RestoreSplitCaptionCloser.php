@@ -8,6 +8,7 @@ use Dom\Element;
 use Dom\HTMLDocument;
 use Dom\Text;
 use Dom\XPath;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -64,6 +65,7 @@ final class RestoreSplitCaptionCloser implements Rule
         foreach (XpathNodes::query($xpath, '//p') as $p) {
             // //p yields only elements, so the guard only narrows the type and the continue is unreachable.
             // @pest-mutate-ignore: ContinueToBreak
+            // @pest-mutate-ignore: InstanceOfToTrue
             if (! $p instanceof Element) {
                 continue;
             }
@@ -102,24 +104,13 @@ final class RestoreSplitCaptionCloser implements Rule
      */
     private function leadingCloserTextNode(Element $p): ?Text
     {
-        foreach ($p->childNodes as $child) {
-            if ($child instanceof Text) {
-                $text = (string) $child->textContent;
-                // Adjacent text nodes merge, so whitespace-only text is never followed by another text node:
-                // the next iteration returns null just as the loop exit would.
-                // @pest-mutate-ignore: ContinueToBreak
-                if (trim($text) === '') {
-                    continue;
-                }
+        $first = $p->firstChild;
+        while ($first instanceof Text && trim(NodeText::content($first)) === '') {
+            $first = $first->nextSibling;
+        }
 
-                if (str_starts_with(ltrim($text), '[/caption]')) {
-                    return $child;
-                }
-
-                return null;
-            }
-
-            return null;
+        if ($first instanceof Text && str_starts_with(ltrim(NodeText::content($first)), '[/caption]')) {
+            return $first;
         }
 
         return null;
@@ -128,12 +119,10 @@ final class RestoreSplitCaptionCloser implements Rule
     private function previousMeaningfulParagraph(Element $p): ?Element
     {
         $prev = $p->previousSibling;
-        while ($prev instanceof Text && trim((string) $prev->textContent) === '') {
+        while ($prev instanceof Text && trim(NodeText::content($prev)) === '') {
             $prev = $prev->previousSibling;
         }
 
-        // The HTML parser lowercases element names, so the fold never changes the comparison.
-        // @pest-mutate-ignore: UnwrapStrtolower
         if ($prev instanceof Element && $prev->localName === 'p') {
             return $prev;
         }
@@ -152,7 +141,7 @@ final class RestoreSplitCaptionCloser implements Rule
 
         // Strip `[/caption]` from the leading text node, preserving
         // any leading whitespace inside the same text node.
-        $text = (string) $closerTextNode->textContent;
+        $text = NodeText::content($closerTextNode);
         $leadingWhitespaceLength = strlen($text) - strlen(ltrim($text));
         $afterCloser = substr($text, $leadingWhitespaceLength + strlen('[/caption]'));
         $closerTextNode->nodeValue = substr($text, 0, $leadingWhitespaceLength).$afterCloser;

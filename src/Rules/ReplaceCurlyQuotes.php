@@ -7,6 +7,7 @@ namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 use Dom\HTMLDocument;
 use Dom\Text;
 use Dom\XPath;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -30,11 +31,12 @@ final class ReplaceCurlyQuotes implements Rule
         foreach (XpathNodes::query($xpath, '//text()') as $textNode) {
             // //text() yields only text nodes, so the guard only narrows the type and the continue is unreachable.
             // @pest-mutate-ignore: ContinueToBreak
+            // @pest-mutate-ignore: InstanceOfToTrue
             if (! $textNode instanceof Text) {
                 continue;
             }
 
-            $textNode->nodeValue = strtr($textNode->nodeValue ?? '', [
+            $textNode->nodeValue = strtr(NodeText::content($textNode), [
                 "\u{201D}" => '"',
                 "\u{201C}" => '"',
                 "\u{2019}" => "'",
