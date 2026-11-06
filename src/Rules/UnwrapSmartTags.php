@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMXPath;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\XPath;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -34,9 +34,9 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class UnwrapSmartTags implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
         // Enumerate st1: through st9: explicitly. A sentinel-letter
         // translate() trick collides with the uppercase-to-lowercase
@@ -54,7 +54,7 @@ final class UnwrapSmartTags implements Rule
         foreach (XpathNodes::query($xpath, $query) as $element) {
             // The query selects only elements, so the guard only narrows the type.
             // @pest-mutate-ignore: InstanceOfToTrue
-            if ($element instanceof DOMElement) {
+            if ($element instanceof Element) {
                 $elements[] = $element;
             }
         }
@@ -64,17 +64,17 @@ final class UnwrapSmartTags implements Rule
         }
     }
 
-    private function unwrap(DOMElement $element): void
+    private function unwrap(Element $element): void
     {
         $parent = $element->parentNode;
 
         // An element found by XPath always has a parent, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
-        if (! $parent instanceof DOMNode) {
+        if (! $parent instanceof Node) {
             return;
         }
 
-        while ($element->firstChild instanceof DOMNode) {
+        while ($element->firstChild instanceof Node) {
             $parent->insertBefore($element->firstChild, $element);
         }
 

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMXPath;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\XPath;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -51,15 +51,15 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class UnwrapSingleCellTable implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
         $tables = [];
         foreach (XpathNodes::query($xpath, '//table') as $table) {
             // //table yields only elements, so the guard only narrows the type.
             // @pest-mutate-ignore: InstanceOfToTrue
-            if ($table instanceof DOMElement) {
+            if ($table instanceof Element) {
                 $tables[] = $table;
             }
         }
@@ -80,9 +80,9 @@ final class UnwrapSingleCellTable implements Rule
      * Return the chain of elements to unwrap (table, optional tbody,
      * tr, td) if the table qualifies as single-cell; otherwise null.
      *
-     * @return list<DOMElement>|null
+     * @return list<Element>|null
      */
-    private function qualifyingChain(DOMElement $table): ?array
+    private function qualifyingChain(Element $table): ?array
     {
         $tbodies = $this->childElementsByTag($table, 'tbody');
         $directRows = $this->childElementsByTag($table, 'tr');
@@ -132,16 +132,16 @@ final class UnwrapSingleCellTable implements Rule
      * matches `$tagName`, a lowercase tag name (the element's own name is
      * compared case-insensitively).
      *
-     * @return list<DOMElement>
+     * @return list<Element>
      */
-    private function childElementsByTag(DOMElement $parent, string $tagName): array
+    private function childElementsByTag(Element $parent, string $tagName): array
     {
         $result = [];
 
         foreach ($parent->childNodes as $child) {
             // A non-element node is named #text, #comment or similar and never equals a tag name, so the type check is redundant.
             // @pest-mutate-ignore: InstanceOfToTrue
-            if ($child instanceof DOMElement && strtolower($child->nodeName) === $tagName) {
+            if ($child instanceof Element && $child->localName === $tagName) {
                 $result[] = $child;
             }
         }
@@ -149,31 +149,31 @@ final class UnwrapSingleCellTable implements Rule
         return $result;
     }
 
-    private function hasChildElement(DOMElement $parent, string $tagName): bool
+    private function hasChildElement(Element $parent, string $tagName): bool
     {
         return $this->childElementsByTag($parent, $tagName) !== [];
     }
 
-    private function unwrapWithBlankLines(DOMElement $element): void
+    private function unwrapWithBlankLines(Element $element): void
     {
         $parent = $element->parentNode;
         // An element in the unwrapped chain always has a parent, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
         // @pest-mutate-ignore: RemoveEarlyReturn
-        if (! $parent instanceof DOMNode) {
+        if (! $parent instanceof Node) {
             return;
         }
 
         $document = $element->ownerDocument;
         // An element in a document always has an owner document, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
-        if (! $document instanceof DOMDocument) {
+        if (! $document instanceof HTMLDocument) {
             return;
         }
 
         $parent->insertBefore($document->createTextNode("\n\n"), $element);
 
-        while ($element->firstChild instanceof DOMNode) {
+        while ($element->firstChild instanceof Node) {
             $parent->insertBefore($element->firstChild, $element);
         }
 

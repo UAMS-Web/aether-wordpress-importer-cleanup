@@ -35,7 +35,7 @@ Trail]]></content:encoded>
     <item>
         <title><![CDATA[p wrapping table — libxml HTML parser auto-splits the p before the table]]></title>
         <link>https://news.uams.edu/sample-tw-f/</link>
-        <content:encoded><![CDATA[Before. <p>Inside p</p><table><tbody><tr><td>X</td></tr></tbody></table>After.]]></content:encoded>
+        <content:encoded><![CDATA[Before. <p>Inside p</p><table><tbody><tr><td>X</td></tr></tbody></table><p></p>After.]]></content:encoded>
     </item>
 </channel>
 </rss>

@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMText;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Text;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -27,22 +28,24 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
  */
 final class CollapseBareDoubleBr implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
         $body = $document->getElementsByTagName('body')->item(0);
 
-        if (! $body instanceof DOMElement) {
+        if (! $body instanceof Element) {
             return;
         }
 
         $children = iterator_to_array($body->childNodes);
         $count = count($children);
         $i = 0;
+        // Merging adjacent text nodes never changes the serialized output, so a run that always merges is equivalent.
+        // @pest-mutate-ignore: FalseToTrue
         $touched = false;
 
         while ($i < $count) {
             $child = $children[$i];
-            if (! $child instanceof DOMElement || $child->nodeName !== 'br') {
+            if (! $child instanceof Element || $child->localName !== 'br') {
                 $i++;
 
                 continue;
@@ -54,14 +57,14 @@ final class CollapseBareDoubleBr implements Rule
 
             while ($j < $count) {
                 $next = $children[$j];
-                if ($next instanceof DOMText && mb_trim($next->nodeValue ?? '') === '') {
+                if ($next instanceof Text && mb_trim(NodeText::content($next)) === '') {
                     $run[] = $j;
                     $j++;
 
                     continue;
                 }
 
-                if ($next instanceof DOMElement && $next->nodeName === 'br') {
+                if ($next instanceof Element && $next->localName === 'br') {
                     $run[] = $j;
                     $brCount++;
                     $j++;
@@ -79,12 +82,12 @@ final class CollapseBareDoubleBr implements Rule
                 $prev = $firstRunNode->previousSibling;
                 $next = $lastRunNode->nextSibling;
 
-                if ($prev instanceof DOMText) {
-                    $prev->nodeValue = mb_rtrim($prev->nodeValue ?? '');
+                if ($prev instanceof Text) {
+                    $prev->nodeValue = mb_rtrim(NodeText::content($prev));
                 }
 
-                if ($next instanceof DOMText) {
-                    $next->nodeValue = mb_ltrim($next->nodeValue ?? '');
+                if ($next instanceof Text) {
+                    $next->nodeValue = mb_ltrim(NodeText::content($next));
                 }
 
                 $replacement = $document->createTextNode("\n\n");

@@ -46,17 +46,11 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  */
 function restoreSplitCaptionCloserBody(string $html): string
 {
-    $document = new DOMDocument('1.0', 'UTF-8');
-    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    $document = Fixture::document($html);
 
     (new RestoreSplitCaptionCloser)->apply($document);
 
-    $out = '';
-    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
-        $out .= $document->saveHTML($child);
-    }
-
-    return $out;
+    return Fixture::bodyHtml($document);
 }
 
 test('restore split caption closer rewrites matching markup', function (string $html, string $expected) {
@@ -83,3 +77,14 @@ test('restore split caption closer leaves other markup alone', function (string 
     'whitespace then element' => ['<p>a</p><p> <b>y</b></p>'],
     'empty paragraph' => ['<p>a</p><p></p>'],
 ]);
+
+test('restore split caption closer skips a whitespace text node that did not merge with the closer text', function () {
+    $document = Fixture::document('<p>a</p><p></p>');
+    $second = $document->getElementsByTagName('p')->item(1);
+    $second?->appendChild($document->createTextNode('  '));
+    $second?->appendChild($document->createTextNode('[/caption]b'));
+
+    (new RestoreSplitCaptionCloser)->apply($document);
+
+    expect(Fixture::bodyHtml($document))->toBe('<p>a[/caption]</p><p>  b</p>');
+});

@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use Dom\DOMException;
+use Dom\HTMLDocument;
+use Dom\XPath;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
 /**
@@ -34,4 +37,11 @@ test('returns an empty iterator for an invalid XPath expression', function (): v
         libxml_clear_errors();
         libxml_use_internal_errors($previous);
     }
+});
+
+test('refuses the namespace axis on an HTML document, so no declaration node reaches the filter', function (): void {
+    $document = HTMLDocument::createFromString('<!DOCTYPE html><html><head></head><body></body></html>', LIBXML_NOERROR);
+
+    expect(fn () => iterator_to_array(XpathNodes::query(new XPath($document), '//body/namespace::*')))
+        ->toThrow(DOMException::class);
 });

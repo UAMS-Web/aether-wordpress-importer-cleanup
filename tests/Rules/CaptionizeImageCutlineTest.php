@@ -46,14 +46,13 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  */
 function captionizeBody(string $html): string
 {
-    $document = new DOMDocument;
-    $document->loadHTML('<html><body>'.$html.'</body></html>');
+    $document = Fixture::document($html);
 
     (new CaptionizeImageCutline)->apply($document);
 
     $body = $document->getElementsByTagName('body')->item(0);
 
-    return substr((string) $document->saveHTML($body), 6, -7);
+    return substr($document->saveHtml($body), 6, -7);
 }
 
 test('an image paired with a cutline becomes a caption shortcode', function (string $html, string $expected) {
@@ -62,6 +61,7 @@ test('an image paired with a cutline becomes a caption shortcode', function (str
     'E right attr' => ['<p align="right"><img src="a" class="x" style="float:left"> Cap text</p>', "\n[caption align=\"alignright\"]<img src=\"a\"> Cap text[/caption]\n"],
     'E left via style with br' => ['<p style="text-align: left"><img src="a" alt="b" width="3" height="4"><br>Cap</p>', "\n[caption align=\"alignleft\"]<img src=\"a\" alt=\"b\" width=\"3\" height=\"4\"> Cap[/caption]\n"],
     'E uppercase attr' => ['<p align="RIGHT"><img src="a"> Cap</p>', "\n[caption align=\"alignright\"]<img src=\"a\"> Cap[/caption]\n"],
+    'C image alone in its paragraph' => ['<p><img src="a"></p><div class="cutline">Cap</div>', '[caption]<img src="a"> Cap[/caption]'],
     'E leading whitespace' => ['<p align="right">   <img src="a"> Cap</p>', "\n[caption align=\"alignright\"]<img src=\"a\"> Cap[/caption]\n"],
     'E several breaks' => ['<p align="right"><img src="a"><br>One<br>Two</p>', "\n[caption align=\"alignright\"]<img src=\"a\"> One Two[/caption]\n"],
     'E style no spaces' => ['<p style="text-align:right"><img src="a"> Cap</p>', "\n[caption align=\"alignright\"]<img src=\"a\"> Cap[/caption]\n"],
@@ -71,9 +71,9 @@ test('an image paired with a cutline becomes a caption shortcode', function (str
     'E surrounded' => ['before<p align="left"><img src="a"> Cap</p>after', "before\n[caption align=\"alignleft\"]<img src=\"a\"> Cap[/caption]\nafter"],
     'E two paragraphs' => ['<p align="left"><img src="a"> One</p><p align="right"><img src="b"> Two</p>', "\n[caption align=\"alignleft\"]<img src=\"a\"> One[/caption]\n\n[caption align=\"alignright\"]<img src=\"b\"> Two[/caption]\n"],
     'E skipped then converted' => ['<p align="left">x</p><p align="right"><img src="b"> Two</p>', "<p align=\"left\">x</p>\n[caption align=\"alignright\"]<img src=\"b\"> Two[/caption]\n"],
-    'F basic' => ['<table><tr><td><img src="a" class="x"><br>Cap text</td></tr></table>', '<table><tr><td>[caption]<img src="a"> Cap text[/caption]</td></tr></table>'],
-    'F whitespace' => ['<table><tr><td>  <img src="a">  <br>  Cap  </td></tr></table>', '<table><tr><td>[caption]<img src="a"> Cap[/caption]</td></tr></table>'],
-    'F two cells' => ['<table><tr><td><img src="a"><br>One</td><td><img src="b"><br>Two</td></tr></table>', '<table><tr><td>[caption]<img src="a"> One[/caption]</td><td>[caption]<img src="b"> Two[/caption]</td></tr></table>'],
+    'F basic' => ['<table><tbody><tr><td><img src="a" class="x"><br>Cap text</td></tr></tbody></table>', '<table><tbody><tr><td>[caption]<img src="a"> Cap text[/caption]</td></tr></tbody></table>'],
+    'F whitespace' => ['<table><tbody><tr><td>  <img src="a">  <br>  Cap  </td></tr></tbody></table>', '<table><tbody><tr><td>[caption]<img src="a"> Cap[/caption]</td></tr></tbody></table>'],
+    'F two cells' => ['<table><tbody><tr><td><img src="a"><br>One</td><td><img src="b"><br>Two</td></tr></tbody></table>', '<table><tbody><tr><td>[caption]<img src="a"> One[/caption]</td><td>[caption]<img src="b"> Two[/caption]</td></tr></tbody></table>'],
     'G font' => ['<font class="cutline"><img src="a" class="x"><br>Cap text</font>', '[caption]<img src="a"> Cap text[/caption]'],
     'G span' => ['<span class="cutline"><img src="a"> Cap</span>', '[caption]<img src="a"> Cap[/caption]'],
     'G div' => ['<div class="cutline"><img src="a"> Cap</div>', '[caption]<img src="a"> Cap[/caption]'],
@@ -113,6 +113,12 @@ test('an image paired with a cutline becomes a caption shortcode', function (str
 test('markup that does not match a cutline pattern is left alone', function (string $html) {
     expect(captionizeBody($html))->toBe($html);
 })->with([
+    'C text after the image' => ['<p><img src="a">x</p><div class="cutline">Cap</div>'],
+    'C element before the image after whitespace' => ['<p> <b>x</b><img src="a"></p><div class="cutline">Cap</div>'],
+    'C element after the image' => ['<p><img src="a"><b>x</b></p><div class="cutline">Cap</div>'],
+    'C element after a break' => ['<p><br><b>x</b><img src="a"></p><div class="cutline">Cap</div>'],
+    'E comment between image and break' => ['<p align="right"><img src="a"><!-- c --><br>text</p>'],
+    'F no text' => ['<table><tbody><tr><td><img src="a"><br></td></tr></tbody></table>'],
     'E non-img first' => ['<p align="right">x<img src="a"> Cap</p>'],
     'E element in text' => ['<p align="right"><img src="a"> Cap <b>x</b></p>'],
     'E no text' => ['<p align="right"><img src="a"></p>'],
@@ -122,15 +128,15 @@ test('markup that does not match a cutline pattern is left alone', function (str
     'E style prefixed property' => ['<p style="x-text-align: right"><img src="a"> Cap</p>'],
     'E style longer word' => ['<p style="text-align: rightmost"><img src="a"> Cap</p>'],
     'E empty style' => ['<p style=""><img src="a"> Cap</p>'],
-    'F no br' => ['<table><tr><td><img src="a">Cap</td></tr></table>'],
-    'F no img' => ['<table><tr><td>text</td></tr></table>'],
-    'F img only' => ['<table><tr><td><img src="a"></td></tr></table>'],
-    'F blank text' => ['<table><tr><td><img src="a"><br>   </td></tr></table>'],
-    'F element in text' => ['<table><tr><td><img src="a"><br>Cap<b>x</b></td></tr></table>'],
-    'F element first' => ['<table><tr><td><b>x</b><img src="a"><br>Cap</td></tr></table>'],
-    'F empty cell' => ['<table><tr><td></td></tr></table>'],
-    'F extra element after text' => ['<table><tr><td><img src="a"><br>One<br>Two</td></tr></table>'],
-    'F text before img' => ['<table><tr><td>lead<img src="a"><br>Cap</td></tr></table>'],
+    'F no br' => ['<table><tbody><tr><td><img src="a">Cap</td></tr></tbody></table>'],
+    'F no img' => ['<table><tbody><tr><td>text</td></tr></tbody></table>'],
+    'F img only' => ['<table><tbody><tr><td><img src="a"></td></tr></tbody></table>'],
+    'F blank text' => ['<table><tbody><tr><td><img src="a"><br>   </td></tr></tbody></table>'],
+    'F element in text' => ['<table><tbody><tr><td><img src="a"><br>Cap<b>x</b></td></tr></tbody></table>'],
+    'F element first' => ['<table><tbody><tr><td><b>x</b><img src="a"><br>Cap</td></tr></tbody></table>'],
+    'F empty cell' => ['<table><tbody><tr><td></td></tr></tbody></table>'],
+    'F extra element after text' => ['<table><tbody><tr><td><img src="a"><br>One<br>Two</td></tr></tbody></table>'],
+    'F text before img' => ['<table><tbody><tr><td>lead<img src="a"><br>Cap</td></tr></tbody></table>'],
     'G similar class' => ['<span class="cutlines"><img src="a"> Cap</span>'],
     'G two images' => ['<span class="cutline"><img src="a"><img src="b"> Cap</span>'],
     'G other element' => ['<span class="cutline"><img src="a"> Cap <b>x</b></span>'],
@@ -168,3 +174,13 @@ test('markup that does not match a cutline pattern is left alone', function (str
     'E empty aligned paragraph' => ['<p align="right"></p>'],
     'B first child is not the cutline' => ['<img src="a"><p><b>x</b><span class="cutline">Cap.</span></p>'],
 ]);
+
+test('a cell caption joins every text node that follows the break', function () {
+    $document = Fixture::document('<table><tbody><tr><td><img src="a"><br>one</td></tr></tbody></table>');
+    $cell = Fixture::first($document, 'td');
+    $cell->appendChild($document->createTextNode('two'));
+
+    (new CaptionizeImageCutline)->apply($document);
+
+    expect(Fixture::bodyHtml($document))->toBe('<table><tbody><tr><td>[caption]<img src="a"> onetwo[/caption]</td></tr></tbody></table>');
+});

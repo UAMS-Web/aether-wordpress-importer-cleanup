@@ -51,17 +51,11 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  */
 function unwrapCaptionOnlyParagraphBody(string $html): string
 {
-    $document = new DOMDocument('1.0', 'UTF-8');
-    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    $document = Fixture::document($html);
 
     (new UnwrapCaptionOnlyParagraph)->apply($document);
 
-    $out = '';
-    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
-        $out .= $document->saveHTML($child);
-    }
-
-    return $out;
+    return Fixture::bodyHtml($document);
 }
 
 test('unwrap caption only paragraph rewrites matching markup', function (string $html, string $expected) {

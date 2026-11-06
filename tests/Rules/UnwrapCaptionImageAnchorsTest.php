@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Dom\HTMLDocument;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\UnwrapCaptionImageAnchors;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Tests\Fixture;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Transform;
@@ -46,17 +47,11 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  */
 function unwrapCaptionImageAnchorsBody(string $html): string
 {
-    $document = new DOMDocument('1.0', 'UTF-8');
-    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    $document = Fixture::document($html);
 
     (new UnwrapCaptionImageAnchors)->apply($document);
 
-    $out = '';
-    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
-        $out .= $document->saveHTML($child);
-    }
-
-    return $out;
+    return Fixture::bodyHtml($document);
 }
 
 test('unwrap caption image anchors rewrites matching markup', function (string $html, string $expected) {
@@ -95,7 +90,7 @@ test('unwrap caption image anchors leaves other markup alone', function (string 
 ]);
 
 test('unwrap caption image anchors matches element names regardless of case', function () {
-    $document = new DOMDocument('1.0', 'UTF-8');
+    $document = HTMLDocument::createEmpty();
     $body = $document->createElement('body');
     $document->appendChild($body);
     $body->appendChild($document->createTextNode('[caption]'));
@@ -111,7 +106,7 @@ test('unwrap caption image anchors matches element names regardless of case', fu
 });
 
 test('unwrap caption image anchors ignores a document without a body', function () {
-    $document = new DOMDocument;
+    $document = HTMLDocument::createEmpty();
 
     (new UnwrapCaptionImageAnchors)->apply($document);
 

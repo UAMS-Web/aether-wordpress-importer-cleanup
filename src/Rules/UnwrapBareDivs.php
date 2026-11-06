@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMXPath;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\XPath;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -25,15 +26,15 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class UnwrapBareDivs implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
         $divs = [];
         foreach (XpathNodes::query($xpath, '//div') as $div) {
             // //div yields only elements, so the type check only narrows the type.
             // @pest-mutate-ignore: InstanceOfToTrue
-            if ($div instanceof DOMElement && $div->attributes->length === 0) {
+            if ($div instanceof Element && $div->attributes->length === 0) {
                 $divs[] = $div;
             }
         }
@@ -43,17 +44,17 @@ final class UnwrapBareDivs implements Rule
         }
     }
 
-    private function unwrap(DOMElement $div): void
+    private function unwrap(Element $div): void
     {
         $parent = $div->parentNode;
 
         // A div found by XPath always has a parent, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
-        if (! $parent instanceof \DOMNode) {
+        if (! $parent instanceof Node) {
             return;
         }
 
-        while ($div->firstChild instanceof \DOMNode) {
+        while ($div->firstChild instanceof Node) {
             $parent->insertBefore($div->firstChild, $div);
         }
 

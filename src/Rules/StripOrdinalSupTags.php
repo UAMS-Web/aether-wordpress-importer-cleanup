@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMText;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\Text;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -51,7 +52,7 @@ final class StripOrdinalSupTags implements Rule
         return ['st', 'nd', 'rd', 'th'];
     }
 
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
         $candidates = [];
 
@@ -66,19 +67,16 @@ final class StripOrdinalSupTags implements Rule
         }
     }
 
-    private function qualifies(DOMElement $sup): bool
+    private function qualifies(Element $sup): bool
     {
-        $text = strtolower(mb_trim($sup->textContent));
+        $text = strtolower(mb_trim(NodeText::content($sup)));
         if (! in_array($text, self::ordinalSuffixes(), true)) {
             return false;
         }
 
         $previousChar = $this->previousCharacter($sup);
-        if ($previousChar === null) {
-            return false;
-        }
 
-        return ctype_digit($previousChar);
+        return $previousChar !== null && ctype_digit($previousChar);
     }
 
     /**
@@ -88,11 +86,11 @@ final class StripOrdinalSupTags implements Rule
      * the nearest preceding character is non-text (e.g. an element
      * boundary like `<br>`).
      */
-    private function previousCharacter(DOMElement $sup): ?string
+    private function previousCharacter(Element $sup): ?string
     {
         $previous = $sup->previousSibling;
-        while ($previous instanceof DOMText) {
-            $value = $previous->textContent;
+        while ($previous instanceof Text) {
+            $value = NodeText::content($previous);
             if ($value !== '') {
                 return substr($value, -1);
             }
@@ -103,16 +101,16 @@ final class StripOrdinalSupTags implements Rule
         return null;
     }
 
-    private function unwrap(DOMElement $sup): void
+    private function unwrap(Element $sup): void
     {
         $parent = $sup->parentNode;
         // A sup found by tag name always has a parent, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
-        if (! $parent instanceof DOMNode) {
+        if (! $parent instanceof Node) {
             return;
         }
 
-        while ($sup->firstChild instanceof DOMNode) {
+        while ($sup->firstChild instanceof Node) {
             $parent->insertBefore($sup->firstChild, $sup);
         }
 
