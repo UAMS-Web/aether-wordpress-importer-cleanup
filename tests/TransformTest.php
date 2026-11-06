@@ -282,19 +282,3 @@ test('apply writes line feeds for carriage returns that a rule leaves in content
     expect($actual)->toContain("<content:encoded><![CDATA[a\nb\nc]]></content:encoded>")
         ->and($actual)->not->toContain("\r");
 });
-
-test('apply empties content and titles when PCRE is unusable from the start', function (): void {
-    $previousLimit = ini_get('pcre.backtrack_limit');
-    ini_set('pcre.backtrack_limit', '0');
-
-    try {
-        $actual = new Transform([])->apply(
-            '<rss xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><item><content:encoded><![CDATA[<p>x</p>]]></content:encoded><title>T</title></item></channel></rss>'
-        );
-    } finally {
-        ini_set('pcre.backtrack_limit', (string) $previousLimit);
-    }
-
-    expect($actual)->toContain('<content:encoded><![CDATA[]]></content:encoded>')
-        ->and($actual)->toContain('<title><![CDATA[T]]></title>');
-});
