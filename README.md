@@ -32,6 +32,19 @@ composer install
 
 Composer does not symlink this package's own `bin/wxr-cleanup` into `vendor/bin` when you're working in the repo itself — invoke the script with PHP (see Usage). If another project installs this package via Composer, `vendor/bin/wxr-cleanup` is available there.
 
+### Amp orbs
+
+`.agents/setup` prepares Debian orbs with PHP 8.4, the XML, mbstring, curl and zip
+extensions, PCOV for coverage and mutation testing, and Composer 2. It installs the
+development dependencies and enables the repository's commit guard. No database,
+application secrets, or running services are required.
+
+Amp snapshots the installed toolchain, `vendor/`, and Composer's cache. Setup skips
+installed system packages and reuses dependencies on warm runs. This library does
+not commit `composer.lock`; setup retains the generated lockfile in the snapshot
+and refreshes it when Composer detects that it no longer matches `composer.json`.
+`.agents/resume` only checks PHP and the autoloader, without reinstalling anything.
+
 ## Usage
 
 ```
