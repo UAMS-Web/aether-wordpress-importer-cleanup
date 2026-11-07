@@ -250,6 +250,18 @@ A run that worked prints a non-zero `Files created` count and, on a class with w
 
 Cleaned WXR lives in `uams-web/wordpress-importer-exports` alongside the raw exports. Initial workflow is manual — when a new raw export lands, an operator runs `php bin/wxr-cleanup` and commits the cleaned output alongside. A news.uams.edu export is cleaned with `--disposition=dispositions/news-uams-edu.json`, one export file at a time. See *Duplicate dispositions* for why a disposition is applied this way.
 
+### Environment of a published cleaned file
+
+Cleaned output can differ between PHP and libxml versions (attribute serialization is the known case, tracked in `UAMS-Web/aether-wordpress-importer-cleanup#6`), so each published cleaned file carries the environment that produced it. Every run prints one line to stderr:
+
+```
+Environment: PHP 8.4.27, libxml 2.11.9, tool commit 2816d690119ecb9fb6f2850243b6ff33ebc5e112.
+```
+
+The commit is read from the checkout the tool runs from, or from Composer's installed reference when the tool is installed as a dependency, and reads `unknown` when neither is available. The operator copies that line into the commit message that publishes the cleaned file in `wordpress-importer-exports`, so the environment of any published file is found in the commit that added it (`git log -1 -- <file>`). A re-clean can then be compared against the environment that made the file it replaces.
+
+The cleaned parts published in `UAMS-Web/wordpress-importer-exports` at `6563e05a2` have no recorded environment, so a difference between a fresh clean and those files cannot be attributed to a PHP or libxml version.
+
 ## Local CI
 
 ```bash
