@@ -89,7 +89,7 @@ test('warns on stderr about each post whose body cleaned to nothing', function (
 
         expect($exitCode)->toBe(0);
         expect($stdout)->toContain('<p>Text</p>');
-        expect($stderr)->toBe('Warning: 1 post(s) had a body that cleaned to nothing: wp:post_id 32.'."\n");
+        expect($stderr)->toContain('Warning: 1 post(s) had a body that cleaned to nothing: wp:post_id 32.'."\n");
     } finally {
         @unlink($input);
     }
@@ -99,7 +99,16 @@ test('prints no warning when every body keeps its text', function () {
     [$exitCode, , $stderr] = runCli([$this->fixtureBefore]);
 
     expect($exitCode)->toBe(0);
-    expect($stderr)->toBe('');
+    expect($stderr)->not->toContain('Warning');
+});
+
+test('prints the PHP version, the libxml version and the tool commit', function () {
+    [$exitCode, , $stderr] = runCli([$this->fixtureBefore]);
+    $commit = trim((string) shell_exec('git -C '.escapeshellarg(dirname(__DIR__)).' rev-parse HEAD'));
+
+    expect($exitCode)->toBe(0);
+    expect($commit)->toMatch('/^[0-9a-f]{40}$/');
+    expect($stderr)->toContain(sprintf("Environment: PHP %s, libxml %s, tool commit %s.\n", PHP_VERSION, LIBXML_DOTTED_VERSION, $commit));
 });
 
 test('rejects an unknown option and an unreadable disposition', function (string $option) {

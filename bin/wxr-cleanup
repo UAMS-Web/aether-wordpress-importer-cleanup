@@ -108,6 +108,24 @@ if ($emptied !== []) {
     fwrite(STDERR, sprintf("Warning: %d post(s) had a body that cleaned to nothing: %s.\n", count($emptied), implode(', ', $emptied)));
 }
 
+// Record the environment that produced this output: cleaned serialization can
+// differ between PHP and libxml versions, so a published file needs these beside it.
+$toolCommit = null;
+$gitOutput = [];
+$gitStatus = 1;
+// Only trust git when this package is its own checkout; inside a consumer's vendor/
+// directory it would report the consumer's commit.
+if (file_exists(dirname(__DIR__).'/.git')) {
+    exec('git -C '.escapeshellarg(dirname(__DIR__)).' rev-parse HEAD 2>&1', $gitOutput, $gitStatus);
+}
+if ($gitStatus === 0 && preg_match('/^[0-9a-f]{40}$/', $gitOutput[0] ?? '') === 1) {
+    $toolCommit = $gitOutput[0];
+} elseif (class_exists(\Composer\InstalledVersions::class) && \Composer\InstalledVersions::isInstalled('uams-web/aether-wordpress-importer-cleanup')) {
+    $toolCommit = \Composer\InstalledVersions::getReference('uams-web/aether-wordpress-importer-cleanup');
+}
+
+fwrite(STDERR, sprintf("Environment: PHP %s, libxml %s, tool commit %s.\n", PHP_VERSION, LIBXML_DOTTED_VERSION, $toolCommit ?? 'unknown'));
+
 if ($outputFile !== null) {
     if (file_put_contents($outputFile, $result) === false) {
         fwrite(STDERR, "Error: cannot write output file: {$outputFile}\n");
