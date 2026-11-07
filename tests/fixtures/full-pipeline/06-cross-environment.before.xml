@@ -49,6 +49,10 @@
         <content:encoded><![CDATA[<?xml:namespace prefix = o ns = "urn:schemas-microsoft-com:office:office" /><p><o:p>x</p><p>Body after the processing instruction</p>]]></content:encoded>
     </item>
     <item>
+        <title><![CDATA[processing instruction then unclosed Office tag with text]]></title>
+        <content:encoded><![CDATA[<?xml:namespace prefix = o ns = "urn:schemas-microsoft-com:office:office" /><p><o:p>Computer classes are held monthly.</p>]]></content:encoded>
+    </item>
+    <item>
         <title><![CDATA[unclosed script]]></title>
         <content:encoded><![CDATA[<p>before</p><script>var x = 1;]]></content:encoded>
     </item>

@@ -97,11 +97,15 @@ if ($dispositionFile !== null) {
 $transform = Transform::withDefaultRules();
 
 try {
-    $result = $transform->apply($wxr);
+    ['wxr' => $result, 'emptied' => $emptied] = $transform->applyReporting($wxr);
 } catch (InvalidArgumentException $exception) {
     fwrite(STDERR, "Error: {$exception->getMessage()}
 ");
     exit(1);
+}
+
+if ($emptied !== []) {
+    fwrite(STDERR, sprintf("Warning: %d post(s) had a body that cleaned to nothing: %s.\n", count($emptied), implode(', ', $emptied)));
 }
 
 if ($outputFile !== null) {

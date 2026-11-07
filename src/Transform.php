@@ -171,6 +171,23 @@ final class Transform
      */
     public function apply(string $wxr): string
     {
+        return $this->applyReporting($wxr)['wxr'];
+    }
+
+    /**
+     * Run `apply()` and also report which posts lost their whole body.
+     *
+     * A post whose `<content:encoded>` held text before cleaning and is empty after it has lost its
+     * article without any error, so each one is named here for the caller to surface.
+     *
+     * @param  string  $wxr  Raw WXR XML
+     * @return array{wxr: string, emptied: list<string>} The cleaned WXR, and a label (`wp:post_id N`) for
+     *                                                   every item whose non-empty body cleaned to nothing
+     *
+     * @throws InvalidArgumentException When the input is empty once invalid XML characters are stripped
+     */
+    public function applyReporting(string $wxr): array
+    {
         $wxr = $this->stripInvalidXmlChars($wxr);
 
         if ($wxr === '') {
@@ -199,8 +216,11 @@ final class Transform
             $this->processTitle($document, $node);
         }
 
+        $emptied = [];
         foreach (XpathNodes::query($xpath, '//item/content:encoded') as $node) {
-            $this->processContent($document, $node);
+            if ($this->processContent($document, $node)) {
+                $emptied[] = $this->itemLabel($node);
+            }
         }
 
         foreach (XpathNodes::query($xpath, '//item/excerpt:encoded') as $node) {
@@ -225,18 +245,35 @@ final class Transform
         $saved = str_replace("\r\n", "\n", $saved);
 
         // @pest-mutate-ignore: UnwrapStrReplace
-        return str_replace("\r", "\n", $saved);
+        return ['wxr' => str_replace("\r", "\n", $saved), 'emptied' => $emptied];
     }
 
     /**
      * Run the rule pipeline against a `<content:encoded>` node, then
      * write the cleaned HTML back into the node as a fresh CDATA section.
      */
-    private function processContent(DOMDocument $document, DOMNode $node): void
+    private function processContent(DOMDocument $document, DOMNode $node): bool
     {
-        $cleaned = $this->settle(fn (string $text): string => $this->applyToHtml($text), $node->textContent);
+        $original = $node->textContent;
+        $cleaned = $this->settle(fn (string $text): string => $this->applyToHtml($text), $original);
 
         $this->replaceCdata($document, $node, $cleaned);
+
+        return mb_trim($original) !== '' && $cleaned === '';
+    }
+
+    /**
+     * Name an item for a report: its `wp:post_id` when it has one.
+     */
+    private function itemLabel(DOMNode $node): string
+    {
+        foreach ($node->parentNode->childNodes ?? [] as $sibling) {
+            if ($sibling->nodeName === 'wp:post_id') {
+                return 'wp:post_id '.mb_trim($sibling->textContent);
+            }
+        }
+
+        return 'an item without wp:post_id';
     }
 
     /**
@@ -473,8 +510,9 @@ final class Transform
      *
      * Two passes per namespace: one for paired open/close tags
      * (`<v:shape>…</v:shape>`), one for self-closing forms
-     * (`<o:lock v:ext="edit"/>`). Bare opening tags without closers are
-     * left to the DOM rule.
+     * (`<o:lock v:ext="edit"/>`). A third pass removes any opening tag still
+     * left, one with no closer after it, and keeps the text around it: the HTML5 parser would otherwise nest the text that follows
+     * an unclosed tag inside it, and the DOM rule drops that subtree.
      */
     private function stripVmlAndOfficeNamespaceTags(string $html): string
     {
@@ -486,7 +524,15 @@ final class Transform
 
         // This pattern never backtracks, so the PCRE limit cannot make it fail and no input reaches the null.
         // @pest-mutate-ignore: RemoveStringCast
-        return (string) preg_replace('/<o:[a-z][a-z0-9-]*\b[^>]*\/>/i', '', $html);
+        $html = (string) preg_replace('/<o:[a-z][a-z0-9-]*\b[^>]*\/>/i', '', $html);
+
+        // Any opening tag still left has no closer after it: the paired passes above removed every pair.
+        // HTML5 parsing nests all text after an unclosed `<o:p>` inside it, and the DOM rule then drops
+        // that whole subtree, so the tag alone goes here and the text it would have swallowed stays.
+        // A stray closer needs no pass: the parser ignores an end tag that closes nothing.
+        // This pattern never backtracks, so the PCRE limit cannot make it fail and no input reaches the null.
+        // @pest-mutate-ignore: RemoveStringCast
+        return (string) preg_replace('/<[vo]:[a-z][a-z0-9-]*\b[^>]*>/i', '', $html);
     }
 
     /**

@@ -50,6 +50,12 @@ $cleaned = Transform::withDefaultRules()->apply($wxr);
 
 `Transform::withDefaultRules()` runs the same pipeline as the CLI. The rule order is defined once, in `Transform::defaultRules()`, and the CLI, the full-pipeline test and any library consumer all use it. `DefaultRulesTest` pins that order and fails if a rule class in `src/Rules/` is left out of it.
 
+### A body that cleans to nothing is reported
+
+When a post's `<content:encoded>` holds text but cleans to an empty body, the cleaned file is still written and `wxr-cleanup` prints one line to stderr naming each such post by `wp:post_id` (`Warning: 1 post(s) had a body that cleaned to nothing: wp:post_id 12206.`). The exit status stays `0`: the warning marks posts to inspect before importing, not a failed run. Library callers get the same list from `Transform::applyReporting()`, whose `emptied` key holds the labels.
+
+An unclosed `<o:p>` or `<v:*>` tag loses only the tag, not the text after it. Elements that open and close, or that self-close, are still removed with their content.
+
 ### Running it twice changes nothing
 
 Each field (content, title, excerpt, `_uams_summary`) is cleaned again over its own output until a pass changes nothing, so a second run over cleaned output is a no-op. A rule can expose structure that only a later pass lets an earlier rule act on, such as a layout table unwrapped before its dateline can be stripped, and the repeat resolves that inside the first run. If a field is still changing after 5 passes, a rule is undoing another rule's work, and `wxr-cleanup` stops with an error naming the cap instead of writing a half-settled body. The reasoning is in [`docs/DECISIONS.md`](docs/DECISIONS.md).
