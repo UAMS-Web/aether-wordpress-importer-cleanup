@@ -21,6 +21,7 @@ declare(strict_types=1);
 use Dom\Element;
 use Dom\HTMLDocument;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\Tests\Disposition\Support;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Transform;
 
 test('apply exposes the explicitly closed envelope to rules for an unclosed script', function (): void {
@@ -281,4 +282,52 @@ test('apply writes line feeds for carriage returns that a rule leaves in content
 
     expect($actual)->toContain("<content:encoded><![CDATA[a\nb\nc]]></content:encoded>")
         ->and($actual)->not->toContain("\r");
+});
+
+test('apply keeps the text around an Office or VML tag that has no closer', function (string $body, string $expected): void {
+    $actual = Transform::withDefaultRules()->apply(Support::wxr([['id' => 1, 'slug' => 'a', 'body' => $body]]));
+
+    expect($actual)->toContain('<content:encoded><![CDATA['.$expected.']]></content:encoded>');
+})->with([
+    'a processing instruction, then an unclosed o:p' => [
+        '<?xml:namespace prefix = o ns = "urn:schemas-microsoft-com:office:office" /><p><o:p>Computer classes are held monthly.</p>',
+        '<p>Computer classes are held monthly.</p>',
+    ],
+    'an unclosed o:p' => ['<p><o:p>Text</p>', '<p>Text</p>'],
+    'an unclosed o:p with attributes' => ['<p><o:p class="x">Text</p>', '<p>Text</p>'],
+    'an unclosed upper-case O:P' => ['<p><O:P>Text</p>', '<p>Text</p>'],
+    'an unclosed v:shape' => ['<p>Before<v:shape id="x">After</p>', '<p>BeforeAfter</p>'],
+    'a pair still drops the element and its content' => ['<p>a<o:p>dropped</o:p>b</p>', '<p>ab</p>'],
+    'a self-closing tag still drops' => ['<p>a<o:lock v:ext="edit"/>b</p>', '<p>ab</p>'],
+]);
+
+test('applyReporting names each item whose non-empty body cleaned to nothing', function (): void {
+    $wxr = Support::wxr([
+        ['id' => 11, 'slug' => 'kept', 'body' => '<p>Text</p>'],
+        ['id' => 12, 'slug' => 'emptied', 'body' => '<p></p>'],
+        ['id' => 13, 'slug' => 'blank', 'body' => "  \n "],
+        ['id' => 14, 'slug' => 'also-emptied', 'body' => '<div><p></p></div>'],
+    ]);
+
+    $result = Transform::withDefaultRules()->applyReporting($wxr);
+
+    expect($result['emptied'])->toBe(['wp:post_id 12', 'wp:post_id 14'])
+        ->and($result['wxr'])->toBe(Transform::withDefaultRules()->apply($wxr));
+});
+
+test('applyReporting reports nothing when every body keeps its text', function (): void {
+    $result = Transform::withDefaultRules()->applyReporting(Support::wxr([
+        ['id' => 21, 'slug' => 'a', 'body' => '<p>One</p>'],
+        ['id' => 22, 'slug' => 'b', 'body' => '<p><o:p>Two</p>'],
+    ]));
+
+    expect($result['emptied'])->toBe([]);
+});
+
+test('applyReporting labels an item that has no post id', function (): void {
+    $result = Transform::withDefaultRules()->applyReporting(
+        '<rss xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><item><content:encoded><![CDATA[<p></p>]]></content:encoded></item></channel></rss>'
+    );
+
+    expect($result['emptied'])->toBe(['an item without wp:post_id']);
 });

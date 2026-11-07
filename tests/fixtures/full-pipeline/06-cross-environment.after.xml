@@ -46,7 +46,11 @@ cell]]></content:encoded>
     </item>
     <item>
         <title><![CDATA[processing instruction then Office tag closed by its paragraph]]></title>
-        <content:encoded><![CDATA[<p>Body after the processing instruction</p>]]></content:encoded>
+        <content:encoded><![CDATA[<p>x</p><p>Body after the processing instruction</p>]]></content:encoded>
+    </item>
+    <item>
+        <title><![CDATA[processing instruction then unclosed Office tag with text]]></title>
+        <content:encoded><![CDATA[<p>Computer classes are held monthly.</p>]]></content:encoded>
     </item>
     <item>
         <title><![CDATA[unclosed script]]></title>

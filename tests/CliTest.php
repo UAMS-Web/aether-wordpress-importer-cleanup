@@ -73,6 +73,35 @@ test('drops a disposition\'s duplicates before cleaning', function () {
     }
 });
 
+test('warns on stderr about each post whose body cleaned to nothing', function () {
+    $input = tempnam(sys_get_temp_dir(), 'wxr-cleanup-in-');
+    if ($input === false) {
+        throw new RuntimeException('Could not create temporary input file');
+    }
+
+    try {
+        file_put_contents($input, Support::wxr([
+            ['id' => 31, 'slug' => 'kept', 'body' => '<p>Text</p>'],
+            ['id' => 32, 'slug' => 'emptied', 'body' => '<p></p>'],
+        ]));
+
+        [$exitCode, $stdout, $stderr] = runCli([$input]);
+
+        expect($exitCode)->toBe(0);
+        expect($stdout)->toContain('<p>Text</p>');
+        expect($stderr)->toBe('Warning: 1 post(s) had a body that cleaned to nothing: wp:post_id 32.'."\n");
+    } finally {
+        @unlink($input);
+    }
+});
+
+test('prints no warning when every body keeps its text', function () {
+    [$exitCode, , $stderr] = runCli([$this->fixtureBefore]);
+
+    expect($exitCode)->toBe(0);
+    expect($stderr)->toBe('');
+});
+
 test('rejects an unknown option and an unreadable disposition', function (string $option) {
     [$exitCode, $stdout] = runCli([$option, $this->fixtureBefore]);
 
@@ -93,7 +122,7 @@ test('the disposition builder rejects an unknown option', function () {
 
 /**
  * @param  list<string>  $args
- * @return array{0: int, 1: string}
+ * @return array{0: int, 1: string, 2: string} The exit code, stdout, and stderr
  */
 function runCli(array $args): array
 {
@@ -117,7 +146,8 @@ function runCli(array $args): array
     fclose($pipes[0]);
     $stdout = stream_get_contents($pipes[1]);
     fclose($pipes[1]);
+    $stderr = stream_get_contents($pipes[2]);
     fclose($pipes[2]);
 
-    return [proc_close($process), $stdout];
+    return [proc_close($process), (string) $stdout, (string) $stderr];
 }
