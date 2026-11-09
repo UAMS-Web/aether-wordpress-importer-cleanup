@@ -71,5 +71,9 @@ composer reinstall pestphp/pest-plugin-mutate --no-interaction --no-progress --p
 composer check-platform-reqs --no-interaction
 echo "Dependencies ready after $((SECONDS - dependencies_started))s."
 
+# Git runs the tracked commit guard only once the clone points at it.
+git config core.hooksPath .githooks
+echo 'Commit guard enabled (core.hooksPath -> .githooks).'
+
 .agents/resume
 echo "Orb setup completed in $((SECONDS - started))s."
