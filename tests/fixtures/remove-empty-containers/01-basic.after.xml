@@ -65,7 +65,7 @@
     <item>
         <title><![CDATA[div wrapping an empty table is preserved (table is content)]]></title>
         <link>https://news.uams.edu/2002/sample-gm/</link>
-        <content:encoded><![CDATA[<div><table><tr><td></td></tr></table></div>]]></content:encoded>
+        <content:encoded><![CDATA[<div><table><tbody><tr><td></td></tr></tbody></table></div>]]></content:encoded>
     </item>
     <item>
         <title><![CDATA[p with real text is preserved]]></title>

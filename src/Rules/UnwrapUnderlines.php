@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -22,7 +22,7 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
  */
 final class UnwrapUnderlines implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
         $elements = [];
         foreach ($document->getElementsByTagName('u') as $element) {
@@ -34,17 +34,17 @@ final class UnwrapUnderlines implements Rule
         }
     }
 
-    private function unwrap(DOMElement $element): void
+    private function unwrap(Element $element): void
     {
         $parent = $element->parentNode;
 
         // A u element found by tag name always has a parent, so the guard only narrows the type.
         // @pest-mutate-ignore: InstanceOfToTrue
-        if (! $parent instanceof DOMNode) {
+        if (! $parent instanceof Node) {
             return;
         }
 
-        while ($element->firstChild instanceof DOMNode) {
+        while ($element->firstChild instanceof Node) {
             $parent->insertBefore($element->firstChild, $element);
         }
 

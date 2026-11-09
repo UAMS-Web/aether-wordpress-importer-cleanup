@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMText;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\Text;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -39,26 +40,22 @@ final class StripLeadingDateLine implements Rule
     private const string DATE_PATTERN =
         '/^\s*(?:Jan\.?|January|Feb\.?|February|March|April|May|June|July|Aug\.?|August|Sept\.?|Sep\.?|September|Oct\.?|October|Nov\.?|November|Dec\.?|December)\s+\d{1,2}(?:st|nd|rd|th)?,\s+\d{4}(?:\s+[\|–—-]\s+)?/iu';
 
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
         $body = $document->getElementsByTagName('body')->item(0);
-        if (! $body instanceof DOMElement) {
+        if (! $body instanceof Element) {
             return;
         }
 
         $first = $this->firstNonWhitespaceChild($body);
 
-        if ($first instanceof DOMText) {
+        if ($first instanceof Text) {
             $this->stripDateFrom($first);
             $this->trimLeadingWhitespaceTextNodes($body);
-
-            return;
-        }
-
-        if ($first instanceof DOMElement && $first->nodeName === 'p') {
+        } elseif ($first instanceof Element && $first->localName === 'p') {
             $leadingText = $this->firstNonWhitespaceChild($first);
 
-            if (! $leadingText instanceof DOMText) {
+            if (! $leadingText instanceof Text) {
                 return;
             }
 
@@ -73,50 +70,52 @@ final class StripLeadingDateLine implements Rule
         }
     }
 
-    private function stripDateFrom(DOMText $textNode): void
+    private function stripDateFrom(Text $textNode): void
     {
-        if (preg_match(self::DATE_PATTERN, $textNode->textContent, $matches) !== 1) {
+        if (preg_match(self::DATE_PATTERN, NodeText::content($textNode), $matches) !== 1) {
             return;
         }
 
-        $remainder = substr($textNode->textContent, strlen($matches[0]));
+        $remainder = substr(NodeText::content($textNode), strlen($matches[0]));
 
         if (trim($remainder) === '') {
+            // A text node read from a parent always has one.
+            // @pest-mutate-ignore: RemoveNullSafeOperator
             $textNode->parentNode?->removeChild($textNode);
         } else {
             $textNode->nodeValue = $remainder;
         }
     }
 
-    private function firstNonWhitespaceChild(DOMNode $parent): ?DOMNode
+    private function firstNonWhitespaceChild(Node $parent): ?Node
     {
         $cursor = $parent->firstChild;
 
-        while ($cursor instanceof DOMText && trim($cursor->textContent) === '') {
+        while ($cursor instanceof Text && trim(NodeText::content($cursor)) === '') {
             $cursor = $cursor->nextSibling;
         }
 
         return $cursor;
     }
 
-    private function trimLeadingWhitespaceTextNodes(DOMNode $parent): void
+    private function trimLeadingWhitespaceTextNodes(Node $parent): void
     {
         $cursor = $parent->firstChild;
 
-        while ($cursor instanceof DOMText && trim($cursor->textContent) === '') {
+        while ($cursor instanceof Text && trim(NodeText::content($cursor)) === '') {
             $toRemove = $cursor;
             $cursor = $cursor->nextSibling;
             $parent->removeChild($toRemove);
         }
     }
 
-    private function isEffectivelyEmpty(DOMElement $element): bool
+    private function isEffectivelyEmpty(Element $element): bool
     {
         foreach ($element->childNodes as $child) {
             // The paragraph was read by its first non-whitespace child, so a whitespace text child is never followed by
             // another child after the date is stripped: continuing or breaking returns the same result.
             // @pest-mutate-ignore: ContinueToBreak
-            if ($child instanceof DOMText && trim($child->textContent) === '') {
+            if ($child instanceof Text && trim(NodeText::content($child)) === '') {
                 continue;
             }
 

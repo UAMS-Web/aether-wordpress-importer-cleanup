@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:wp="http://wordpress.org/export/1.2/" version="2.0">
+<channel>
+    <title>Synthetic cross-environment corpus</title>
+    <item>
+        <title><![CDATA[attribute value with double quotes]]></title>
+        <content:encoded><![CDATA[<p><img src="a.png" alt="Said she &quot;can see&quot; it"></p>]]></content:encoded>
+    </item>
+    <item>
+        <title><![CDATA[attribute value with single quotes]]></title>
+        <content:encoded><![CDATA[<p><img src="a.png" alt="It's here"></p>]]></content:encoded>
+    </item>
+    <item>
+        <title><![CDATA[less-than inside href]]></title>
+        <content:encoded><![CDATA[<p><a href="/?a=1<b">link</a></p>]]></content:encoded>
+    </item>
+    <item>
+        <title><![CDATA[leading blank inside href]]></title>
+        <content:encoded><![CDATA[<p><a href=" /?id=1&amp;sid=2">link</a></p>]]></content:encoded>
+    </item>
+    <item>
+        <title><![CDATA[valueless attribute]]></title>
+        <content:encoded><![CDATA[<p><img src="a.png" alt=""> text</p>]]></content:encoded>
+    </item>
+    <item>
+        <title><![CDATA[unclosed inline tags]]></title>
+        <content:encoded><![CDATA[<p><strong>bold <em>italic</em></strong></p><p><strong><em>next</em></strong></p>]]></content:encoded>
+    </item>
+    <item>
+        <title><![CDATA[block inside inline]]></title>
+        <content:encoded><![CDATA[<p><strong>Speaker<br>Title</strong></p>]]></content:encoded>
+    </item>
+    <item>
+        <title><![CDATA[paragraph closed after a table]]></title>
+        <content:encoded><![CDATA[<p>Intro</p>
+
+cell]]></content:encoded>
+    </item>
+    <item>
+        <title><![CDATA[stray end tags]]></title>
+        <content:encoded><![CDATA[<p>text</p>]]></content:encoded>
+    </item>
+    <item>
+        <title><![CDATA[nested anchors]]></title>
+        <content:encoded><![CDATA[<a href="/a">one </a><a href="/b">two</a>]]></content:encoded>
+    </item>
+    <item>
+        <title><![CDATA[processing instruction then Office tag closed by its paragraph]]></title>
+        <content:encoded><![CDATA[<p>x</p><p>Body after the processing instruction</p>]]></content:encoded>
+    </item>
+    <item>
+        <title><![CDATA[processing instruction then unclosed Office tag with text]]></title>
+        <content:encoded><![CDATA[<p>Computer classes are held monthly.</p>]]></content:encoded>
+    </item>
+    <item>
+        <title><![CDATA[unclosed script]]></title>
+        <content:encoded><![CDATA[<p>before</p><script>var x = 1;</script>]]></content:encoded>
+    </item>
+    <item>
+        <title><![CDATA[non-breaking spaces and entities]]></title>
+        <content:encoded><![CDATA[<p>Fax:&nbsp;(501) 555-0100 &amp; &lt;tag&gt; © —</p>]]></content:encoded>
+    </item>
+    <item>
+        <title><![CDATA[uppercase tags and attributes]]></title>
+        <content:encoded><![CDATA[<p>Upper <strong>case</strong> <img src="a.png" alt="x"></p>]]></content:encoded>
+    </item>
+    <item>
+        <title><![CDATA[table without tbody]]></title>
+        <content:encoded><![CDATA[one
+
+two]]></content:encoded>
+    </item>
+    <item>
+        <title><![CDATA[embed with a closer]]></title>
+        <content:encoded><![CDATA[<embed src="a.swf">]]></content:encoded>
+    </item>
+    <item>
+        <title><![CDATA[list items outside a list]]></title>
+        <content:encoded><![CDATA[<li>orphan</li><li>second</li>]]></content:encoded>
+    </item>
+    <item>
+        <title><![CDATA[comment and conditional comment]]></title>
+        <content:encoded><![CDATA[<p>a</p>]]></content:encoded>
+    </item>
+</channel>
+</rss>

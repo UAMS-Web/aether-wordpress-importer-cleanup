@@ -1,6 +1,10 @@
 <?php
 
 declare(strict_types=1);
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\Text;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\CollapseExtraLineBreaks;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\UnwrapTableWrappers;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Tests\Fixture;
@@ -56,7 +60,7 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  */
 function unwrapTableWrappersRun(array $spec): string
 {
-    $document = new DOMDocument('1.0', 'UTF-8');
+    $document = HTMLDocument::createEmpty();
     $document->appendChild(unwrapTableWrappersBuild($document, $spec));
 
     (new UnwrapTableWrappers)->apply($document);
@@ -67,7 +71,7 @@ function unwrapTableWrappersRun(array $spec): string
 /**
  * @param  array<mixed>  $spec
  */
-function unwrapTableWrappersBuild(DOMDocument $document, array $spec): DOMElement
+function unwrapTableWrappersBuild(HTMLDocument $document, array $spec): Element
 {
     $name = $spec[0] ?? '';
     $element = $document->createElement(is_string($name) ? $name : '');
@@ -82,9 +86,9 @@ function unwrapTableWrappersBuild(DOMDocument $document, array $spec): DOMElemen
     return $element;
 }
 
-function unwrapTableWrappersDump(DOMNode $node): string
+function unwrapTableWrappersDump(Node $node): string
 {
-    if ($node instanceof DOMText) {
+    if ($node instanceof Text) {
         return json_encode($node->nodeValue, JSON_THROW_ON_ERROR);
     }
 
@@ -93,7 +97,7 @@ function unwrapTableWrappersDump(DOMNode $node): string
         $children[] = unwrapTableWrappersDump($child);
     }
 
-    return $node->nodeName.'('.implode(',', $children).')';
+    return ($node instanceof Element ? $node->localName : $node->nodeName).'('.implode(',', $children).')';
 }
 
 test('unwrap table wrappers pads the table and drops a wrapper', function (string $wrapper) {
@@ -139,6 +143,6 @@ test('unwrap table wrappers keeps looking after a root table', function () {
     expect(unwrapTableWrappersRun(['table', ['p', ['table', 'x']]]))->toBe('table("\n\n",table("x"),"\n\n")');
 });
 
-test('unwrap table wrappers stops climbing at a wrapper that is the document element', function () {
-    expect(unwrapTableWrappersRun(['p', ['table', 'x']]))->toBe('table("x")');
+test('unwrap table wrappers leaves a wrapper that is the document element in place, since a document cannot hold the padding text', function () {
+    expect(unwrapTableWrappersRun(['p', ['table', 'x']]))->toBe('p("\n\n",table("x"),"\n\n")');
 });

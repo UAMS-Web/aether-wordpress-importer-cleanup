@@ -6,7 +6,7 @@
     <item>
         <title><![CDATA[img + div.cutline at body level becomes [caption]]]></title>
         <link>https://news.uams.edu/sample-cap-a/</link>
-        <content:encoded><![CDATA[[caption]<img src="https://uamshealth.com/upload/images/Newsroom/News%20Releases/Roger%20Paula-story.png" alt> Two-time breast cancer survivor and artist Paula Rogers was inspired by the support she received from her family, friends and strangers.[/caption]]]></content:encoded>
+        <content:encoded><![CDATA[[caption]<img src="https://uamshealth.com/upload/images/Newsroom/News%20Releases/Roger%20Paula-story.png" alt=""> Two-time breast cancer survivor and artist Paula Rogers was inspired by the support she received from her family, friends and strangers.[/caption]]]></content:encoded>
     </item>
     <item>
         <title><![CDATA[img + span.cutline with self-closing slash and full attribute set]]></title>

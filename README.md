@@ -32,19 +32,6 @@ composer install
 
 Composer does not symlink this package's own `bin/wxr-cleanup` into `vendor/bin` when you're working in the repo itself — invoke the script with PHP (see Usage). If another project installs this package via Composer, `vendor/bin/wxr-cleanup` is available there.
 
-### Amp orbs
-
-`.agents/setup` prepares Debian orbs with PHP 8.4, the XML, mbstring, curl and zip
-extensions, PCOV for coverage and mutation testing, and Composer 2. It installs the
-development dependencies and enables the repository's commit guard. No database,
-application secrets, or running services are required.
-
-Amp snapshots the installed toolchain, `vendor/`, and Composer's cache. Setup skips
-installed system packages and reuses dependencies on warm runs. This library does
-not commit `composer.lock`; setup retains the generated lockfile in the snapshot
-and refreshes it when Composer detects that it no longer matches `composer.json`.
-`.agents/resume` only checks PHP and the autoloader, without reinstalling anything.
-
 ## Usage
 
 ```
@@ -62,6 +49,12 @@ $cleaned = Transform::withDefaultRules()->apply($wxr);
 ```
 
 `Transform::withDefaultRules()` runs the same pipeline as the CLI. The rule order is defined once, in `Transform::defaultRules()`, and the CLI, the full-pipeline test and any library consumer all use it. `DefaultRulesTest` pins that order and fails if a rule class in `src/Rules/` is left out of it.
+
+### A body that cleans to nothing is reported
+
+When a post's `<content:encoded>` holds text but cleans to an empty body, the cleaned file is still written and `wxr-cleanup` prints one line to stderr naming each such post by `wp:post_id` (`Warning: 1 post(s) had a body that cleaned to nothing: wp:post_id 12206.`). The exit status stays `0`: the warning marks posts to inspect before importing, not a failed run. Library callers get the same list from `Transform::applyReporting()`, whose `emptied` key holds the labels.
+
+An unclosed `<o:p>` or `<v:*>` tag loses only the tag, not the text after it. Elements that open and close, or that self-close, are still removed with their content.
 
 ### Running it twice changes nothing
 
@@ -172,7 +165,7 @@ Each rule lives in `src/Rules/` and operates on the parsed HTML inside four targ
 
 `<title>` and `<content:encoded>` are treated as raw HTML. `<excerpt:encoded>` arrives entity-encoded (`&lt;span&gt;` rather than `<span>`) and is entity-decoded before rules run; after rules run the excerpt is reduced to plain text via `strip_tags` + `mb_trim`. The `_uams_summary` postmeta value is also entity-encoded HTML, but unlike the excerpt its structure is preserved — decode → run rules → re-encode the `<` and `>` characters → write back to CDATA. Trailing Unicode whitespace (including `&nbsp;`) is stripped from `<title>` and `<content:encoded>` output too — that's the recurring `&nbsp;` "blank line" the legacy editor liked to append on save.
 
-Void elements are normalized to the HTML5 form on output: every `<br />` and `<br/>` becomes `<br>` once the parsed DOM is serialized back out. This is a free side-effect of DOMDocument's HTML serialization mode, not a rule, so it applies uniformly to all three processed elements without any rule configuration.
+Void elements are normalized to the HTML5 form on output: every `<br />` and `<br/>` becomes `<br>` once the parsed DOM is serialized back out. This is a free side-effect of HTML5 serialization by PHP's `Dom\HTMLDocument` (the same parser and serializer on every operating system, so the output does not depend on the libxml build), not a rule, so it applies uniformly to all three processed elements without any rule configuration.
 
 The pipeline runs every configured rule in order against every processed element. Order is significant — `StripLeadingDateLine` must see the body after `UnwrapSpans` has unwrapped any presentational wrapper, `UnwrapEmptyBolds` must run after `PromoteBoldToInnerStrong` so the "speaker block" lift consumes the orphan `<b>` first, `RenameBoldToStrong` must run after the `<b>`-specific rules so it only sees the genuine inline-bold case, `TrimBlockEdges` runs after `LiftTrailingBr` so a trailing `<br>` lifted out of an inline gets stripped from the surrounding block, etc.
 
@@ -256,6 +249,18 @@ A run that worked prints a non-zero `Files created` count and, on a class with w
 ## Pipeline
 
 Cleaned WXR lives in `uams-web/wordpress-importer-exports` alongside the raw exports. Initial workflow is manual — when a new raw export lands, an operator runs `php bin/wxr-cleanup` and commits the cleaned output alongside. A news.uams.edu export is cleaned with `--disposition=dispositions/news-uams-edu.json`, one export file at a time. See *Duplicate dispositions* for why a disposition is applied this way.
+
+### Environment of a published cleaned file
+
+Cleaned output can differ between PHP and libxml versions (attribute serialization is the known case, tracked in `UAMS-Web/aether-wordpress-importer-cleanup#6`), so each published cleaned file carries the environment that produced it. Every run prints one line to stderr:
+
+```
+Environment: PHP 8.4.27, libxml 2.11.9, tool commit 2816d690119ecb9fb6f2850243b6ff33ebc5e112.
+```
+
+The commit is read from the checkout the tool runs from, or from Composer's installed reference when the tool is installed as a dependency, and reads `unknown` when neither is available. The operator copies that line into the commit message that publishes the cleaned file in `wordpress-importer-exports`, so the environment of any published file is found in the commit that added it (`git log -1 -- <file>`). A re-clean can then be compared against the environment that made the file it replaces.
+
+The cleaned parts published in `UAMS-Web/wordpress-importer-exports` at `6563e05a2` have no recorded environment, so a difference between a fresh clean and those files cannot be attributed to a PHP or libxml version.
 
 ## Local CI
 

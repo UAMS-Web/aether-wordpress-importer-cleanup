@@ -2,61 +2,74 @@
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
-export DEBIAN_FRONTEND=noninteractive
+started=$SECONDS
+scratch=$(mktemp -d)
+trap 'rm -rf -- "$scratch"' EXIT
 
-step() {
-    local label="$1"
-    shift
-    local start=$SECONDS
-    printf '\n==> %s\n' "$label"
-    "$@"
-    printf '==> %s finished in %ss\n' "$label" "$((SECONDS - start))"
-}
+# Amp orbs use Debian 12; this installer is not a host-machine bootstrap.
+source /etc/os-release
+if [[ "$ID" != debian || "$VERSION_ID" != 12 ]]; then
+    echo 'Orb setup requires Debian 12.' >&2
+    exit 1
+fi
 
+echo 'Checking PHP 8.4 system packages.'
 packages=(ca-certificates curl git unzip php8.4-cli php8.4-curl php8.4-mbstring php8.4-xml php8.4-zip php8.4-pcov)
 missing=()
 for package in "${packages[@]}"; do
-    if ! dpkg-query -W -f='${Status}' "$package" 2>/dev/null | grep -qx 'install ok installed'; then
+    if [[ "$(dpkg-query -W -f='${Status}' "$package" 2>/dev/null || true)" != 'install ok installed' ]]; then
         missing+=("$package")
     fi
 done
 
 if ((${#missing[@]})); then
-    if [[ ! -f /etc/apt/sources.list.d/php.list ]]; then
-        step 'Refresh package index' sudo apt-get update -qq
-        step 'Install repository prerequisites' sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl
-        keyring=$(mktemp --suffix=.deb)
-        trap 'rm -f "$keyring"' EXIT
-        step 'Download PHP repository keyring' curl -fsSL --retry 3 \
-            https://packages.sury.org/debsuryorg-archive-keyring.deb -o "$keyring"
-        step 'Install PHP repository keyring' sudo dpkg -i "$keyring"
-        . /etc/os-release
-        printf 'deb [signed-by=/usr/share/keyrings/debsuryorg-archive-keyring.gpg] https://packages.sury.org/php/ %s main\n' "$VERSION_CODENAME" \
+    sudo env DEBIAN_FRONTEND=noninteractive apt-get update
+    sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl
+    if ! apt-cache show php8.4-cli >/dev/null 2>&1; then
+        # Bootstrap the signed PHP repository using its published keyring package.
+        curl --fail --location --retry 2 --connect-timeout 15 --max-time 120 \
+            https://packages.sury.org/debsuryorg-archive-keyring.deb -o "$scratch/php-keyring.deb"
+        sudo dpkg -i "$scratch/php-keyring.deb"
+        printf '%s\n' 'deb [signed-by=/usr/share/keyrings/debsuryorg-archive-keyring.gpg] https://packages.sury.org/php/ bookworm main' \
             | sudo tee /etc/apt/sources.list.d/php.list >/dev/null
+        sudo env DEBIAN_FRONTEND=noninteractive apt-get update
     fi
-    step 'Refresh PHP package index' sudo apt-get update -qq
-    step 'Install PHP 8.4 and extensions' sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "${missing[@]}"
+    sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y "${missing[@]}"
+fi
+sudo update-alternatives --set php /usr/bin/php8.4
+php -r 'exit(PHP_MAJOR_VERSION === 8 && PHP_MINOR_VERSION === 4 ? 0 : 1);'
+echo "System packages ready after $((SECONDS - started))s."
+
+if ! command -v composer >/dev/null 2>&1 || ! composer --no-ansi --version | grep -q '^Composer version 2\.'; then
+    echo 'Installing Composer 2 with installer checksum verification.'
+    checksum=$(curl --fail --location --retry 2 --connect-timeout 15 --max-time 120 https://composer.github.io/installer.sig)
+    curl --fail --location --retry 2 --connect-timeout 15 --max-time 120 \
+        https://getcomposer.org/installer -o "$scratch/composer-setup.php"
+    printf '%s  %s\n' "$checksum" "$scratch/composer-setup.php" | sha384sum --check
+    php "$scratch/composer-setup.php" --2 --install-dir="$scratch" --filename=composer
+    sudo install -m 755 "$scratch/composer" /usr/local/bin/composer
 fi
 
-step 'Select PHP 8.4 CLI' sudo update-alternatives --set php /usr/bin/php8.4
-
-if ! command -v composer >/dev/null 2>&1; then
-    installer=$(mktemp)
-    trap 'rm -f "${keyring:-}" "$installer"' EXIT
-    step 'Download Composer installer' curl -fsSL --retry 3 https://getcomposer.org/installer -o "$installer"
-    signature=$(curl -fsSL --retry 3 https://composer.github.io/installer.sig)
-    if [[ "$(sha384sum "$installer" | cut -d ' ' -f 1)" != "$signature" ]]; then
-        echo 'Composer installer signature mismatch' >&2
+echo 'Installing development dependencies.'
+dependencies_started=$SECONDS
+composer validate --no-check-lock --no-check-publish --no-check-all
+# This library ignores its generated lock. Retain it when current, but do not let
+# a stale snapshot keep dependencies incompatible with the current manifest.
+if [[ -f composer.lock ]] && ! composer validate --check-lock --no-check-publish --no-check-all; then
+    if ! git check-ignore --quiet composer.lock; then
+        echo 'Composer lock is stale and is not ignored; update it explicitly before setup.' >&2
         exit 1
     fi
-    step 'Install Composer 2' sudo php "$installer" --2 --install-dir=/usr/local/bin --filename=composer
+    echo 'Removing the stale ignored Composer lock before resolving dependencies.'
+    rm -- composer.lock
 fi
+composer install --no-interaction --no-progress --prefer-dist
+# A warm install alone does not apply patches changed since the snapshot.
+# Reinstall the sole patched package directly: patches-repatch discards the
+# status of its inner install, which can otherwise hide a failed patch.
+composer reinstall pestphp/pest-plugin-mutate --no-interaction --no-progress --prefer-dist
+composer check-platform-reqs --no-interaction
+echo "Dependencies ready after $((SECONDS - dependencies_started))s."
 
-if [[ -f composer.lock ]] && ! composer validate --check-lock --no-check-publish --no-check-all --quiet; then
-    step 'Refresh snapshot dependencies for composer.json' composer update --no-interaction --no-progress --prefer-dist
-else
-    step 'Install Composer dependencies' composer install --no-interaction --no-progress --prefer-dist
-fi
-step 'Check dependency platform requirements' composer check-platform-reqs
-step 'Enable repository commit guard' git config core.hooksPath .githooks
-printf '\nOrb setup ready: %s\n' "$(php -r 'echo PHP_VERSION;')"
+.agents/resume
+echo "Orb setup completed in $((SECONDS - started))s."

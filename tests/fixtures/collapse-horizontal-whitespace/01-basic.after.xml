@@ -11,12 +11,12 @@
     <item>
         <title><![CDATA[NBSP mixed with spaces collapses to a single NBSP]]></title>
         <link>https://news.uams.edu/2002/sample-aw/</link>
-        <content:encoded><![CDATA[Fax: (501) 686-5067]]></content:encoded>
+        <content:encoded><![CDATA[Fax:&nbsp;(501) 686-5067]]></content:encoded>
     </item>
     <item>
         <title><![CDATA[Two NBSPs collapse to a single NBSP]]></title>
         <link>https://news.uams.edu/2002/sample-ax/</link>
-        <content:encoded><![CDATA[Foo Bar]]></content:encoded>
+        <content:encoded><![CDATA[Foo&nbsp;Bar]]></content:encoded>
     </item>
     <item>
         <title><![CDATA[Single space unchanged]]></title>
@@ -31,7 +31,7 @@
     <item>
         <title><![CDATA[Single NBSP unchanged]]></title>
         <link>https://news.uams.edu/2002/sample-ba/</link>
-        <content:encoded><![CDATA[Foo Bar]]></content:encoded>
+        <content:encoded><![CDATA[Foo&nbsp;Bar]]></content:encoded>
     </item>
 </channel>
 </rss>

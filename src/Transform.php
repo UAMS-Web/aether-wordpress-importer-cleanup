@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup;
 
+use Dom\HTMLDocument;
+use Dom\HTMLElement;
 use DOMDocument;
 use DOMNode;
 use DOMXPath;
@@ -62,8 +64,8 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\UnwrapWholeContentTable;
  *
  * Cleanup is scoped to three WXR elements per item: `<title>`,
  * `<content:encoded>`, and `<excerpt:encoded>`. Each one is wrapped in a
- * synthetic `<body>` envelope so it can be parsed as a single-rooted
- * DOMDocument, the configured rules run against the envelope in order,
+ * synthetic `<body>` envelope so it can be parsed as a fragment by
+ * `Dom\HTMLDocument`, the configured rules run against that document in order,
  * and the cleaned result is written back into the original element as a
  * CDATA section. Other WXR elements (`<wp:meta_value>`, `<dc:creator>`,
  * etc.) are left untouched.
@@ -169,6 +171,23 @@ final class Transform
      */
     public function apply(string $wxr): string
     {
+        return $this->applyReporting($wxr)['wxr'];
+    }
+
+    /**
+     * Run `apply()` and also report which posts lost their whole body.
+     *
+     * A post whose `<content:encoded>` held text before cleaning and is empty after it has lost its
+     * article without any error, so each one is named here for the caller to surface.
+     *
+     * @param  string  $wxr  Raw WXR XML
+     * @return array{wxr: string, emptied: list<string>} The cleaned WXR, and a label (`wp:post_id N`) for
+     *                                                   every item whose non-empty body cleaned to nothing
+     *
+     * @throws InvalidArgumentException When the input is empty once invalid XML characters are stripped
+     */
+    public function applyReporting(string $wxr): array
+    {
         $wxr = $this->stripInvalidXmlChars($wxr);
 
         if ($wxr === '') {
@@ -197,8 +216,11 @@ final class Transform
             $this->processTitle($document, $node);
         }
 
+        $emptied = [];
         foreach (XpathNodes::query($xpath, '//item/content:encoded') as $node) {
-            $this->processContent($document, $node);
+            if ($this->processContent($document, $node)) {
+                $emptied[] = $this->itemLabel($node);
+            }
         }
 
         foreach (XpathNodes::query($xpath, '//item/excerpt:encoded') as $node) {
@@ -216,20 +238,42 @@ final class Transform
             throw new RuntimeException('Failed to serialize WXR document.');
         }
 
-        // libxml emits CRLF on Windows; normalize so output matches LF fixtures and
+        // The WXR serializer emits CRLF on Windows; normalize so output matches LF fixtures and
         // stays stable across macOS, Linux, and Windows checkouts.
-        return str_replace(["\r\n", "\r"], "\n", $saved);
+        // Measured on macOS: nothing reaches this point holding a carriage return, so only a Windows run exercises both.
+        // @pest-mutate-ignore: UnwrapStrReplace
+        $saved = str_replace("\r\n", "\n", $saved);
+
+        // @pest-mutate-ignore: UnwrapStrReplace
+        return ['wxr' => str_replace("\r", "\n", $saved), 'emptied' => $emptied];
     }
 
     /**
      * Run the rule pipeline against a `<content:encoded>` node, then
      * write the cleaned HTML back into the node as a fresh CDATA section.
      */
-    private function processContent(DOMDocument $document, DOMNode $node): void
+    private function processContent(DOMDocument $document, DOMNode $node): bool
     {
-        $cleaned = $this->settle(fn (string $text): string => $this->applyToHtml($text), $node->textContent);
+        $original = $node->textContent;
+        $cleaned = $this->settle(fn (string $text): string => $this->applyToHtml($text), $original);
 
         $this->replaceCdata($document, $node, $cleaned);
+
+        return mb_trim($original) !== '' && $cleaned === '';
+    }
+
+    /**
+     * Name an item for a report: its `wp:post_id` when it has one.
+     */
+    private function itemLabel(DOMNode $node): string
+    {
+        foreach ($node->parentNode->childNodes ?? [] as $sibling) {
+            if ($sibling->nodeName === 'wp:post_id') {
+                return 'wp:post_id '.mb_trim($sibling->textContent);
+            }
+        }
+
+        return 'an item without wp:post_id';
     }
 
     /**
@@ -259,8 +303,14 @@ final class Transform
     {
         $cleaned = $this->applyToHtml($title);
 
+        // A null here reaches str_replace() as an empty subject and ends as the same empty title.
+        // @pest-mutate-ignore: RemoveStringCast
         $cleaned = (string) preg_replace('/<br\b[^>]*>/i', ' ', $cleaned);
-        $cleaned = str_replace(["\r\n", "\n", "\r"], ' ', $cleaned);
+        $cleaned = str_replace(["\r\n", "\n"], ' ', $cleaned);
+        // Measured on macOS: a lone carriage return in a rule's text arrives here as a line feed, so only a platform
+        // that keeps it reaches this replacement.
+        // @pest-mutate-ignore: UnwrapStrReplace
+        $cleaned = str_replace("\r", ' ', $cleaned);
         $cleaned = strip_tags($cleaned);
         $cleaned = (string) preg_replace('/ {2,}/', ' ', $cleaned);
 
@@ -326,7 +376,7 @@ final class Transform
      *
      * Only `<` and `>` are re-encoded on output, matching the source's
      * encoding scheme (attribute quotes and `&` entities are left bare —
-     * `saveHTML` already produced `&amp;` for text-content ampersands).
+     * the HTML serializer already produced `&amp;` for text-content ampersands).
      */
     private function processSummaryMeta(DOMDocument $document, DOMNode $node): void
     {
@@ -401,40 +451,29 @@ final class Transform
         $html = $this->stripVmlAndOfficeNamespaceTags($html);
         $html = $this->stripSmartTagWrappers($html);
 
-        $wrapper = new DOMDocument('1.0', 'UTF-8');
-
-        // <?xml encoding hint forces DOMDocument to treat the input as UTF-8;
-        // LIBXML_HTML_NOIMPLIED skips the implicit <html>/<body> wrappers so
-        // our explicit <body> stays as the document root.
-        $envelope = '<?xml encoding="UTF-8"?><body>'.$html;
-
-        // Keep the closer explicit: raw-text parsing differs across libxml versions.
-        $envelope .= '</body>';
-
-        $previousErrorMode = libxml_use_internal_errors(true);
-
-        try {
-            $wrapper->loadHTML($envelope, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-        } finally {
-            libxml_clear_errors();
-            libxml_use_internal_errors($previousErrorMode);
+        // Dom\HTMLDocument is PHP's own HTML5 parser (lexbor), not libxml's, so parsing
+        // and serialization are the same on every operating system and libxml version.
+        // The fragment is parsed inside an empty <body>, as a browser would parse innerHTML.
+        $wrapper = HTMLDocument::createFromString('<!DOCTYPE html><html><head></head><body></body></html>', LIBXML_NOERROR);
+        // A document parsed from this skeleton always has a body; a rule may remove it later.
+        $shell = $wrapper->body;
+        // @pest-mutate-ignore: InstanceOfToTrue
+        if (! $shell instanceof HTMLElement) {
+            throw new RuntimeException('The HTML5 parser returned no body for the fragment shell.');
         }
+
+        $shell->innerHTML = $html;
 
         foreach ($this->rules as $rule) {
             $rule->apply($wrapper);
         }
 
-        $body = $wrapper->getElementsByTagName('body')->item(0);
-        if ($body === null) {
+        $body = $wrapper->body;
+        if (! $body instanceof HTMLElement) {
             return $html;
         }
 
-        $result = '';
-        foreach ($body->childNodes as $child) {
-            $result .= $wrapper->saveHTML($child);
-        }
-
-        $result = $this->normalizeVoidEmbeds($result);
+        $result = $body->innerHTML;
 
         // mb_trim strips Unicode whitespace including NBSP (U+00A0), which
         // shows up at the end of plain-text WXR content as the trailing
@@ -461,26 +500,39 @@ final class Transform
      * Strip — wrapper AND content — every Word VML (`<v:*>`) or Office
      * (`<o:*>`) namespaced element from raw HTML before DOM parsing.
      *
-     * libxml's HTML parser handles namespaced tags inconsistently across
-     * versions — some preserve `<v:shape>`/`<o:p>` as literal elements,
-     * some drop the namespace prefix and produce `<shape>`/`<p>`, some
-     * discard entirely. The DOM-level rules (`StripOfficeNamespaceTags`)
-     * only see the prefixed form, so prefix-dropping libxml builds leave
-     * them untouched. Stripping at the string level sidesteps the
-     * variance and the DOM rule becomes a defense-in-depth no-op.
+     * The pipeline used to parse with libxml's HTML parser, which handled
+     * namespaced tags inconsistently across versions: some builds kept
+     * `<v:shape>`/`<o:p>` as literal elements, some dropped the namespace
+     * prefix and produced `<shape>`/`<p>`. The string-level strip is kept
+     * unchanged so the result does not depend on how any parser treats the
+     * prefix, and the DOM rule (`StripOfficeNamespaceTags`) is a
+     * defense-in-depth no-op.
      *
      * Two passes per namespace: one for paired open/close tags
      * (`<v:shape>…</v:shape>`), one for self-closing forms
-     * (`<o:lock v:ext="edit"/>`). Bare opening tags without closers are
-     * left to the DOM rule.
+     * (`<o:lock v:ext="edit"/>`). A third pass removes any opening tag still
+     * left, one with no closer after it, and keeps the text around it: the HTML5 parser would otherwise nest the text that follows
+     * an unclosed tag inside it, and the DOM rule drops that subtree.
      */
     private function stripVmlAndOfficeNamespaceTags(string $html): string
     {
         $html = (string) preg_replace('/<v:[a-z][a-z0-9-]*\b[^>]*>.*?<\/v:[a-z][a-z0-9-]*\s*>/is', '', $html);
         $html = (string) preg_replace('/<v:[a-z][a-z0-9-]*\b[^>]*\/>/i', '', $html);
+        // A null here reaches the next preg_replace() as an empty subject, and that call's own cast ends it as ''.
+        // @pest-mutate-ignore: RemoveStringCast
         $html = (string) preg_replace('/<o:[a-z][a-z0-9-]*\b[^>]*>.*?<\/o:[a-z][a-z0-9-]*\s*>/is', '', $html);
 
-        return (string) preg_replace('/<o:[a-z][a-z0-9-]*\b[^>]*\/>/i', '', $html);
+        // This pattern never backtracks, so the PCRE limit cannot make it fail and no input reaches the null.
+        // @pest-mutate-ignore: RemoveStringCast
+        $html = (string) preg_replace('/<o:[a-z][a-z0-9-]*\b[^>]*\/>/i', '', $html);
+
+        // Any opening tag still left has no closer after it: the paired passes above removed every pair.
+        // HTML5 parsing nests all text after an unclosed `<o:p>` inside it, and the DOM rule then drops
+        // that whole subtree, so the tag alone goes here and the text it would have swallowed stays.
+        // A stray closer needs no pass: the parser ignores an end tag that closes nothing.
+        // This pattern never backtracks, so the PCRE limit cannot make it fail and no input reaches the null.
+        // @pest-mutate-ignore: RemoveStringCast
+        return (string) preg_replace('/<[vo]:[a-z][a-z0-9-]*\b[^>]*>/i', '', $html);
     }
 
     /**
@@ -488,35 +540,20 @@ final class Transform
      * "smart tag" element (`<stN:*>…</stN:*>`) from raw HTML before
      * DOM parsing.
      *
-     * Same libxml-version-variance story as `<v:*>` / `<o:*>`: the DOM
-     * rule (`UnwrapSmartTags`) only sees the prefixed form, but older
-     * libxml builds drop the `stN:` prefix during parse and produce
-     * `<city>`/`<state>`/`<personname>` — names the rule no longer
-     * recognizes. Stripping the wrappers (without their content) at the
-     * string level sidesteps the variance.
+     * Same history as `<v:*>` / `<o:*>`: older libxml builds dropped the
+     * `stN:` prefix during parse and produced `<city>`/`<state>`/
+     * `<personname>`, names the DOM rule (`UnwrapSmartTags`) does not
+     * recognize. Stripping the wrappers (without their content) at the
+     * string level keeps the result independent of the parser.
      */
     private function stripSmartTagWrappers(string $html): string
     {
+        // A null here reaches the next preg_replace() as an empty subject, and that call's own cast ends it as ''.
+        // @pest-mutate-ignore: RemoveStringCast
         $html = (string) preg_replace('/<st[0-9]+:[a-z][a-z0-9-]*\b[^>]*>/i', '', $html);
 
+        // This pattern never backtracks, so the PCRE limit cannot make it fail and no input reaches the null.
+        // @pest-mutate-ignore: RemoveStringCast
         return (string) preg_replace('/<\/st[0-9]+:[a-z][a-z0-9-]*\s*>/i', '', $html);
-    }
-
-    /**
-     * Drop every `</embed>` closer so `<embed>` is always the void element.
-     *
-     * libxml's HTML serializer disagrees with itself across versions on
-     * whether `<embed>` is a void element: 2.15.x emits `<embed src="x">`
-     * with no closing tag, older 2.9.x/2.10.x builds emit
-     * `<embed src="x"></embed>`. Those older builds also parse a void
-     * `<embed>` as an open element, so two embeds in a row nest and the
-     * outer one keeps a closer after the inner one is stripped. The HTML5
-     * spec treats `<embed>` as void and a void element has no closer, so
-     * every closer goes, which also leaves a repeated pass with nothing
-     * new to change.
-     */
-    private function normalizeVoidEmbeds(string $html): string
-    {
-        return (string) preg_replace('/<\/embed\s*>/i', '', $html);
     }
 }

@@ -1,6 +1,9 @@
 <?php
 
 declare(strict_types=1);
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Text;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\UnwrapEmbedOnlyParagraph;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Tests\Fixture;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Transform;
@@ -52,10 +55,10 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  */
 function unwrapEmbedOnlyParagraphBody(array $children, string $embedName = 'embed'): array
 {
-    $document = new DOMDocument('1.0', 'UTF-8');
+    $document = HTMLDocument::createEmpty();
     $body = $document->createElement('body');
     $document->appendChild($body);
-    $body->appendChild($document->createElement('p', 'before'));
+    $body->appendChild(Fixture::element($document, 'p', 'before'));
 
     $paragraph = $document->createElement('p');
     $body->appendChild($paragraph);
@@ -72,13 +75,13 @@ function unwrapEmbedOnlyParagraphBody(array $children, string $embedName = 'embe
         }
     }
 
-    $body->appendChild($document->createElement('p', 'after'));
+    $body->appendChild(Fixture::element($document, 'p', 'after'));
 
     (new UnwrapEmbedOnlyParagraph)->apply($document);
 
     $names = [];
     foreach ($body->childNodes as $node) {
-        $names[] = $node instanceof DOMText ? '#text:'.json_encode($node->nodeValue) : $node->nodeName;
+        $names[] = $node instanceof Text ? '#text:'.json_encode($node->nodeValue) : ($node instanceof Element ? $node->localName : $node->nodeName);
     }
 
     return $names;
@@ -104,14 +107,15 @@ test('unwrap embed only paragraph leaves other paragraphs alone', function (arra
     'text and embed' => [['x', 'embed']],
     'element and embed' => [['b', 'embed']],
     'comment and embed' => [['comment', 'embed']],
+    'embed and element' => [['embed', 'b']],
 ]);
 
-test('unwrap embed only paragraph matches the embed name regardless of case', function () {
-    expect(unwrapEmbedOnlyParagraphBody(['embed'], 'EMBED'))->toBe(['p', '#text:"\n"', 'EMBED', '#text:"\n"', 'p']);
+test('unwrap embed only paragraph matches an embed created with an upper case name, which an HTML document lowercases', function () {
+    expect(unwrapEmbedOnlyParagraphBody(['embed'], 'EMBED'))->toBe(['p', '#text:"\n"', 'embed', '#text:"\n"', 'p']);
 });
 
 test('unwrap embed only paragraph ignores a document without paragraphs', function () {
-    $document = new DOMDocument('1.0', 'UTF-8');
+    $document = HTMLDocument::createEmpty();
     $body = $document->createElement('body');
     $document->appendChild($body);
 

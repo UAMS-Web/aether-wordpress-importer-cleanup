@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMText;
-use DOMXPath;
+use Dom\HTMLDocument;
+use Dom\Text;
+use Dom\XPath;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
 
@@ -29,7 +30,7 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\XpathNodes;
  */
 final class TrimLineEdges implements Rule
 {
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
         // Earlier unwrapping rules (`UnwrapSpans`, `UnwrapBareDivs`)
         // leave adjacent text nodes whose split hides line boundaries
@@ -39,19 +40,22 @@ final class TrimLineEdges implements Rule
         // newline-adjacent.
         $document->normalize();
 
-        $xpath = new DOMXPath($document);
+        $xpath = new XPath($document);
 
         foreach (XpathNodes::query($xpath, '//text()') as $textNode) {
             // //text() yields only text nodes, so the guard only narrows the type and the continue is unreachable.
             // @pest-mutate-ignore: ContinueToBreak
-            if (! $textNode instanceof DOMText) {
+            // @pest-mutate-ignore: InstanceOfToTrue
+            if (! $textNode instanceof Text) {
                 continue;
             }
 
+            // preg_replace returns null only when PCRE fails, and null empties a node exactly as an empty string does.
+            // @pest-mutate-ignore: RemoveStringCast
             $textNode->nodeValue = (string) preg_replace(
                 '/[ \t\x{00A0}]+\n|\n[ \t\x{00A0}]+/u',
                 "\n",
-                $textNode->nodeValue ?? '',
+                NodeText::content($textNode),
             );
         }
     }

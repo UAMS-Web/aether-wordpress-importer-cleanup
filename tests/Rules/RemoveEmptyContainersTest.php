@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Dom\HTMLDocument;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rules\RemoveEmptyContainers;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Tests\Fixture;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Transform;
@@ -46,17 +47,11 @@ test('fixture round trip', function (string $beforeFile, string $afterFile) {
  */
 function removeEmptyContainersBody(string $html): string
 {
-    $document = new DOMDocument('1.0', 'UTF-8');
-    $document->loadHTML('<?xml encoding="UTF-8"?><body>'.$html.'</body>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    $document = Fixture::document($html);
 
     (new RemoveEmptyContainers)->apply($document);
 
-    $out = '';
-    foreach ($document->getElementsByTagName('body')->item(0)->childNodes ?? [] as $child) {
-        $out .= $document->saveHTML($child);
-    }
-
-    return $out;
+    return Fixture::bodyHtml($document);
 }
 
 test('remove empty containers rewrites matching markup', function (string $html, string $expected) {
@@ -79,25 +74,25 @@ test('remove empty containers leaves other markup alone', function (string $html
     'image kept' => ['<p><img src="a"></p>'],
     'rule kept' => ['<div><hr></div>'],
     'anchor kept' => ['<p><a name="x"></a></p>'],
-    'empty table kept' => ['<div><table><tr><td></td></tr></table></div>'],
-    'cell kept' => ['<table><tr><td> </td><td>x</td></tr></table>'],
+    'empty table kept' => ['<div><table><tbody><tr><td></td></tr></tbody></table></div>'],
+    'cell kept' => ['<table><tbody><tr><td> </td><td>x</td></tr></tbody></table>'],
     'only whitespace body' => ['   '],
 ]);
 
 test('remove empty containers keeps every preserved element', function (string $tag) {
-    $document = new DOMDocument;
-    $document->loadHTML('<html><body></body></html>');
+    $document = HTMLDocument::createFromString('<html><body></body></html>', LIBXML_NOERROR);
     $body = $document->getElementsByTagName('body')->item(0);
+    // The parsed shell already holds a head, so count what the rule leaves against what was there.
+    $existing = $document->getElementsByTagName($tag)->length;
     $body?->appendChild($document->createElement($tag));
 
     (new RemoveEmptyContainers)->apply($document);
 
-    expect($document->getElementsByTagName($tag)->length)->toBe(1);
+    expect($document->getElementsByTagName($tag)->length)->toBe($existing + 1);
 })->with(['head', 'title', 'br', 'hr', 'img', 'input', 'embed', 'source', 'track', 'wbr', 'col', 'colgroup', 'link', 'meta', 'base', 'param', 'area', 'iframe', 'object', 'audio', 'video', 'svg', 'canvas', 'button', 'select', 'textarea', 'a', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption']);
 
 test('remove empty containers keeps the document structure of an empty page', function () {
-    $document = new DOMDocument;
-    $document->loadHTML('<html><head><title></title></head><body></body></html>');
+    $document = HTMLDocument::createFromString('<html><head><title></title></head><body></body></html>', LIBXML_NOERROR);
 
     (new RemoveEmptyContainers)->apply($document);
 
@@ -108,8 +103,7 @@ test('remove empty containers keeps the document structure of an empty page', fu
 });
 
 test('remove empty containers keeps a container that wraps content only', function (string $tag) {
-    $document = new DOMDocument;
-    $document->loadHTML('<html><body><div></div></body></html>');
+    $document = HTMLDocument::createFromString('<html><body><div></div></body></html>', LIBXML_NOERROR);
     $div = $document->getElementsByTagName('div')->item(0);
     $div?->appendChild($document->createElement($tag));
 

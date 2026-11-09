@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
 
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMText;
+use Dom\Element;
+use Dom\HTMLDocument;
+use Dom\Node;
+use Dom\Text;
+use UAMSWeb\Aether\WordPressImporter\Cleanup\NodeText;
 use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
 
 /**
@@ -79,38 +80,42 @@ final class NormalizeCityDateline implements Rule
         ];
     }
 
-    public function apply(DOMDocument $document): void
+    public function apply(HTMLDocument $document): void
     {
         $body = $document->getElementsByTagName('body')->item(0);
 
-        if (! $body instanceof DOMElement) {
+        if (! $body instanceof Element) {
             return;
         }
 
         $textNode = $this->findLeadingTextNode($body);
-        if (! $textNode instanceof DOMText) {
+        if (! $textNode instanceof Text) {
             return;
         }
 
         $pattern = $this->buildPattern();
+        // preg_replace_callback returns null only when PCRE fails, and null empties a node exactly as '' does.
+        // The pattern is anchored to the start, so a limit above one changes nothing.
+        // @pest-mutate-ignore: RemoveStringCast
+        // @pest-mutate-ignore: IncrementInteger
         $textNode->nodeValue = (string) preg_replace_callback(
             $pattern,
             static fn (array $match): string => $match['city'].", Ark. \u{2014} ",
-            $textNode->nodeValue ?? '',
+            NodeText::content($textNode),
             1,
         );
     }
 
-    private function findLeadingTextNode(DOMNode $container): ?DOMText
+    private function findLeadingTextNode(Node $container): ?Text
     {
         $first = $container->firstChild;
 
-        if ($first instanceof DOMText) {
+        if ($first instanceof Text) {
             return $first;
         }
 
-        if ($first instanceof DOMElement
-            && in_array($first->nodeName, ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'], true)) {
+        if ($first instanceof Element
+            && in_array($first->localName, ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'], true)) {
             return $this->findLeadingTextNode($first);
         }
 
