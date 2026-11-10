@@ -47,7 +47,7 @@
         "test": "pest",
         "mutate": [
             "Composer\\Config::disableProcessTimeout",
-            "@php vendor/bin/pest --mutate --path=src/Disposition,src/Rule.php,src/Transform.php,src/XpathNodes.php"
+            "@php vendor/bin/pest --mutate --path=src/Disposition,src/Rule.php,src/Rules,src/Transform.php,src/XpathNodes.php"
         ],
         "refactor": "rector",
         "refactor:sweep": "rector --clear-cache --config=rector-sweep.php",
