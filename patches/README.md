@@ -1,21 +1,22 @@
 # Temporary development patches
 
-All eight patches target `pestphp/pest-plugin-mutate` `v5.0.2`
+The patches target `pestphp/pest-plugin-mutate` `v5.0.2`
 (`d0c87110416b699413cc073b8dcc92e440d81931`), which Pest `^5.3` installs.
 
-## Mutation run correctness (seven patches)
+## Mutation run correctness (seven shared patches)
 
-The seven `pest-plugin-mutate-*.patch` files are copied byte for byte from
-`UAMS-Web/statamic-addon-template` on `main`, where they are registered in the
-same root-only `patches.json`. On Windows the stock plugin counts a mutant as
-killed when its test process never ran a test, so a mutation run scores 100%
-whatever the suite detects (UAMS-Web/uams-claude-skills#544; upstream
-pestphp/pest#1937, fixed by the unmerged pestphp/pest-plugin-mutate#45). The
-patches launch each mutant child correctly, stop silent `@pest-mutate-ignore`
-parsing defects, and keep a filtered or parallel run from scoring every mutant
-killed. They are retired with the shared patch set
-(UAMS-Web/uams-claude-skills#548) or when an installable upstream release
-carries the fix.
+The seven mutation-run patches come from `uams-web/patches-pest-plugin-mutate`
+`v1.0.0`, a `require-dev` dependency. `patches.json` lists them by their
+`vendor/uams-web/patches-pest-plugin-mutate/patches/` path, so they are not
+copied into this directory and nothing this repository installs reaches its
+consumers. On Windows the stock plugin counts a mutant as killed when its test
+process never ran a test, so a mutation run scores 100% whatever the suite
+detects (UAMS-Web/uams-claude-skills#544; upstream pestphp/pest#1937, fixed by
+the unmerged pestphp/pest-plugin-mutate#45). The patches launch each mutant
+child correctly, stop silent `@pest-mutate-ignore` parsing defects, and keep a
+filtered or parallel run from scoring every mutant killed. A patch is changed
+or retired in a release of the package (UAMS-Web/uams-claude-skills#548), or
+when an installable upstream release carries the fix.
 
 ## Class-constant mutation coverage
 
