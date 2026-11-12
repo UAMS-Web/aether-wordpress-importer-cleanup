@@ -20,6 +20,12 @@
         "rector/rector": "^2.6",
         "uams-web/patches-pest-plugin-mutate": "^1.0"
     },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/UAMS-Web/patches-pest-plugin-mutate.git"
+        }
+    ],
     "autoload": {
         "psr-4": {
             "UAMSWeb\\Aether\\WordPressImporter\\Cleanup\\": "src/"
