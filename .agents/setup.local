@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# This repository's own orb setup steps. The shared .agents/setup runs this last, after it has
+# installed the toolchain and run composer install.
+set -euo pipefail
+
+# This library ignores its generated lock. Retain it when current, but do not let a stale snapshot
+# keep dependencies incompatible with the current manifest.
+if [[ -f composer.lock ]] && ! composer validate --check-lock --no-check-publish --no-check-all; then
+    if ! git check-ignore --quiet composer.lock; then
+        echo 'Composer lock is stale and is not ignored; update it explicitly before setup.' >&2
+        exit 1
+    fi
+    echo 'Removing the stale ignored Composer lock and resolving dependencies again.'
+    rm -- composer.lock
+    composer install --no-interaction --no-progress --prefer-dist
+fi
+
+# A warm install alone does not apply patches changed since the snapshot. Reinstall the patched
+# package directly: patches-repatch discards the status of its inner install, which can otherwise
+# hide a failed patch.
+composer reinstall pestphp/pest-plugin-mutate --no-interaction --no-progress --prefer-dist
+composer check-platform-reqs --no-interaction
+
+# Git runs the tracked commit guard only once the clone points at it.
+git config core.hooksPath .githooks
+echo 'Commit guard enabled (core.hooksPath -> .githooks).'

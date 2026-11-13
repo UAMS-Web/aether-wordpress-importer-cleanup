@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# This repository's own orb wake checks. The shared .agents/resume runs this last. It installs
+# nothing: a failure points at .agents/setup.
+set -euo pipefail
+
+if ! php -r 'exit(PHP_MAJOR_VERSION === 8 && PHP_MINOR_VERSION === 4 && extension_loaded("pcov") && ini_get("pcov.enabled") ? 0 : 1);'; then
+    echo 'PHP 8.4 with enabled PCOV is required; run .agents/setup.' >&2
+    exit 1
+fi
+composer check-platform-reqs --no-interaction
