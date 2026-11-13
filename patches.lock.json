@@ -1,17 +1,7 @@
 {
-    "_hash": "d1d16945673b655484ff16a582fc130216c3e3831214d987199ae22dc2ce30b0",
+    "_hash": "4bb3fc456a0968706634fe865ca70dc38d0cc06d77b5c5a871e121cdc64c7667",
     "patches": {
         "pestphp/pest-plugin-mutate": [
-            {
-                "package": "pestphp/pest-plugin-mutate",
-                "description": "Map class constant mutants to tests covering the containing class (temporary; tracked in #11)",
-                "url": "patches/pest-class-constant-coverage.patch",
-                "sha256": "1b1684f7708ff201d64833ca11d82593480882a6be44c8f12a31fb7032c6cdca",
-                "depth": 1,
-                "extra": {
-                    "provenance": "patches-file:patches.json"
-                }
-            },
             {
                 "package": "pestphp/pest-plugin-mutate",
                 "description": "Launch each mutant child process so a run cannot score every mutant killed without executing one (temporary; see #2322)",
@@ -77,6 +67,26 @@
                 "description": "Drop the parallel runner's options (--passthru-php, --processes and the rest) from each mutant child so a parallel run given one cannot score every mutant killed (temporary; see #2926, #2947)",
                 "url": "vendor/uams-web/patches-pest-plugin-mutate/patches/pest-plugin-mutate-drop-parallel-runner-options.patch",
                 "sha256": "b999bc57c3eb43da339e37e7781f3f1d479481dc6f82c5b388775f1083b5043c",
+                "depth": 1,
+                "extra": {
+                    "provenance": "patches-file:patches.json"
+                }
+            },
+            {
+                "package": "pestphp/pest-plugin-mutate",
+                "description": "Select tests for a mutated scalar function default, so it is not scored without a test running it (temporary; see UAMS-Web/uams-2020#673)",
+                "url": "vendor/uams-web/patches-pest-plugin-mutate/patches/pest-plugin-mutate-function-defaults.patch",
+                "sha256": "04e7c1c42edb2ef07da615e5ac57b2236384e8c2ca8aa27323a69ed5aef37a7e",
+                "depth": 1,
+                "extra": {
+                    "provenance": "patches-file:patches.json"
+                }
+            },
+            {
+                "package": "pestphp/pest-plugin-mutate",
+                "description": "Map a class constant mutant to the tests covering its containing class, since a constant initializer has no executable coverage line (temporary)",
+                "url": "vendor/uams-web/patches-pest-plugin-mutate/patches/pest-plugin-mutate-class-constant-coverage.patch",
+                "sha256": "e09b3535c7a69db85b35366fd1c0aa676a5cf98d0671d8245323516f8018b8f4",
                 "depth": 1,
                 "extra": {
                     "provenance": "patches-file:patches.json"
