@@ -1,5 +1,5 @@
 {
-    "_hash": "be466aa0758bf949caf4b660e3f1a63bdf3d1cb14af6aacd28ec9ec9bef9cd4d",
+    "_hash": "f8e88b4613f16038e253e72ba3411250ebe489269fd97ac6cce351033406e873",
     "patches": {
         "pestphp/pest-plugin-mutate": [
             {
@@ -86,7 +86,7 @@
                 "package": "pestphp/pest-plugin-mutate",
                 "description": "Propagate a mutation into isolated test processes and reject a test report that ran no tests, so an isolated run cannot score a mutant killed without running a test (temporary; see UAMS-Web/UAMSWP-Logo-List#82)",
                 "url": "vendor/uams-web/patches-pest-plugin-mutate/patches/pest-plugin-mutate-isolated-processes.patch",
-                "sha256": "6dd578588121b5291568bf26d001bd865a3a7e74d93f236a31ce93326dc0f3d2",
+                "sha256": "c55ed9e33fb20bad54b824307a6676fa060b1d2f580cea5c52c088c401b9cd92",
                 "depth": 1,
                 "extra": {
                     "provenance": "patches-file:patches.json"
