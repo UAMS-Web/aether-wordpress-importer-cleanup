@@ -108,14 +108,9 @@ final class LiftCaptionsOutOfParagraph implements Rule
         // A paragraph passes the balanced-marker check only when its text holds a caption marker, and a marker in a
         // text node always yields a caption chunk, so the chunk list is never empty here.
         // @pest-mutate-ignore: IfNegated
-        // @pest-mutate-ignore: InstanceOfToTrue
-        // @pest-mutate-ignore: InstanceOfToFalse
-        // @pest-mutate-ignore: RemoveMethodCall
+        // @pest-mutate-ignore: RemoveNullSafeOperator
         if ($chunks === []) {
-            $parent = $p->parentNode;
-            if ($parent instanceof Node) {
-                $parent->removeChild($p);
-            }
+            $p->parentNode?->removeChild($p);
 
             return;
         }

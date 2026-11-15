@@ -3,9 +3,9 @@
 The patches target `pestphp/pest-plugin-mutate` `v5.0.2`
 (`d0c87110416b699413cc073b8dcc92e440d81931`), which Pest `^5.3` installs.
 
-## Shared patches (nine)
+## Shared patches (fourteen)
 
-All nine patches come from `uams-web/patches-pest-plugin-mutate` `v1.2.0`, a
+All fourteen patches come from `uams-web/patches-pest-plugin-mutate` `v1.4.0`, a
 `require-dev` dependency. `patches.json` lists them by their
 `vendor/uams-web/patches-pest-plugin-mutate/patches/` path, so none is copied
 into this directory and nothing this repository installs reaches its
@@ -21,6 +21,17 @@ correctly, stop silent `@pest-mutate-ignore` parsing defects, and keep a
 filtered or parallel run from scoring every mutant killed. A patch is changed
 or retired in a release of the package (UAMS-Web/uams-claude-skills#548), or
 when an installable upstream release carries the fix.
+
+The other seven keep a run from scoring a mutant killed without a test running
+it or for a cause no test produced: selecting tests for a mutated scalar
+function default, propagating a mutation into isolated test processes, skipping
+a node whose own comment carries a matching `@pest-mutate-ignore` marker,
+sizing a mutant child's time limit from the serial work of the initial suite,
+retrying a mutant child that times out once, keeping Patchwork in front of the
+mutation stream wrapper, and mapping class-constant mutants to the tests
+covering their class (described below). Every patch the package declares is
+registered here: the package is in `require-dev`, so `cweagans/composer-patches`
+applies only what the root `patches.json` lists.
 
 ## Class-constant mutation coverage
 
