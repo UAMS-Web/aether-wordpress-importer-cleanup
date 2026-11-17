@@ -13,6 +13,8 @@ description: >-
   Edit it there, not here; the next sync overwrites this copy.
   Delivered to this repository through the profile(s): orb.
 -->
+<!-- cspell:ignore sury dpkg SHASUMS -->
+
 # Orb setup
 
 The sync writes `.agents/setup` and `.agents/resume` to each repository that takes the `orb`
