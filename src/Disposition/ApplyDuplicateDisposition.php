@@ -8,7 +8,8 @@ use RuntimeException;
 
 /**
  * Applies a duplicate disposition to a whole WXR export: drops each post it marks to drop and
- * gives each kept post its set's canonical slug.
+ * gives each kept post its set's canonical slug, in both `<wp:post_name>` and the last path
+ * segment of `<link>`.
  *
  * This works on whole `<item>` blocks and runs before the body rules, never inside them. The
  * importer runs the body rules on single post bodies captured through the migration API
@@ -19,9 +20,10 @@ use RuntimeException;
  * recorded for that post id. A mismatch stops the run instead of dropping or renaming the wrong
  * post, which is what a disposition applied to a different site's export, or to an export taken
  * after a post was edited, would otherwise do. A kept post already at its canonical slug is left
- * alone, so applying a disposition twice changes nothing the second time. A post the disposition
- * names but the export lacks is skipped, because one site's posts can be split across several
- * export files.
+ * alone, so applying a disposition twice changes nothing the second time. A `<link>` whose last
+ * path segment is not the slug being replaced (a `?p=` permalink, a percent-encoded slug) is left
+ * as it is. A post the disposition names but the export lacks is skipped, because one site's
+ * posts can be split across several export files.
  *
  * Only `post` items are matched. Items of other types are left untouched, whatever their id.
  */
@@ -87,7 +89,7 @@ final class ApplyDuplicateDisposition
                 [$recorded, $canonical] = $keeps[$postId];
                 $current = $this->assertSlug($item, $postId, [$recorded, $canonical]);
                 if ($current !== $canonical) {
-                    $item = $this->withSlug($item, $canonical);
+                    $item = $this->withLinkSlug($this->withSlug($item, $canonical), $current, $canonical);
                     $renamed[] = $postId;
                 }
             }
@@ -149,6 +151,32 @@ final class ApplyDuplicateDisposition
         // @pest-mutate-ignore:BooleanOrToBooleanAnd
         if ($replaced === null || $count !== 1) {
             throw new RuntimeException("Could not rewrite a kept post's <wp:post_name>.");
+        }
+
+        return $replaced;
+    }
+
+    /**
+     * Replace the last path segment of the item's first `<link>` with the canonical slug when it
+     * is the slug being replaced, keeping the host, the date path, any trailing slash and any
+     * query or fragment. The importer records `<link>` as the entry's original URL, and the host
+     * application builds the redirect for the canonical path from it.
+     */
+    private function withLinkSlug(string $item, string $current, string $canonical): string
+    {
+        $quoted = preg_quote($current, '/');
+
+        $replaced = preg_replace_callback(
+            '/(<link>(?:<!\[CDATA\[)?[^<]*?\/)'.$quoted.'(\/?(?:[?#][^<]*?)?(?:\]\]>)?<\/link>)/',
+            static fn (array $match): string => $match[1].$canonical.$match[2],
+            $item,
+            1,
+        );
+
+        // A PCRE error gives null, and the pattern is built from an escaped slug.
+        // @pest-mutate-ignore:IfNegated
+        if ($replaced === null) {
+            throw new RuntimeException("Could not rewrite a kept post's <link>.");
         }
 
         return $replaced;
