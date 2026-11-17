@@ -189,6 +189,59 @@ test('renames only the first slug field of a kept item', function (): void {
     ));
 });
 
+test('rewrites the slug in the kept post link and nothing else in it', function (string $link, string $expected): void {
+    $item = '<item><link>'.$link.'</link><wp:post_id>20</wp:post_id><wp:post_type>post</wp:post_type><wp:post_name>turnage-named-chairman-2</wp:post_name></item>';
+
+    expect(dispositionApply($item)['wxr'])->toBe(
+        '<item><link>'.$expected.'</link><wp:post_id>20</wp:post_id><wp:post_type>post</wp:post_type><wp:post_name><![CDATA[turnage-named-chairman]]></wp:post_name></item>',
+    );
+})->with([
+    'trailing slash' => ['https://uams-news.test/2015/01/09/turnage-named-chairman-2/', 'https://uams-news.test/2015/01/09/turnage-named-chairman/'],
+    'no trailing slash' => ['https://uams-news.test/2015/01/09/turnage-named-chairman-2', 'https://uams-news.test/2015/01/09/turnage-named-chairman'],
+    'query string' => ['https://uams-news.test/2015/01/09/turnage-named-chairman-2/?x=1', 'https://uams-news.test/2015/01/09/turnage-named-chairman/?x=1'],
+    'fragment' => ['https://uams-news.test/2015/01/09/turnage-named-chairman-2#top', 'https://uams-news.test/2015/01/09/turnage-named-chairman#top'],
+    'CDATA' => ['<![CDATA[https://uams-news.test/2015/01/09/turnage-named-chairman-2/]]>', '<![CDATA[https://uams-news.test/2015/01/09/turnage-named-chairman/]]>'],
+]);
+
+test('leaves a kept post link alone when its last path segment is not the replaced slug', function (string $link): void {
+    $item = '<item><link>'.$link.'</link><wp:post_id>20</wp:post_id><wp:post_type>post</wp:post_type><wp:post_name>turnage-named-chairman-2</wp:post_name></item>';
+
+    expect(dispositionApply($item)['wxr'])->toContain('<link>'.$link.'</link>');
+})->with([
+    'a ?p= permalink' => ['https://uams-news.test/?p=20'],
+    'the slug as a prefix of the segment' => ['https://uams-news.test/2015/turnage-named-chairman-2-extra/'],
+    'the slug as a suffix of the segment' => ['https://uams-news.test/2015/x-turnage-named-chairman-2/'],
+    'the slug in the host' => ['https://turnage-named-chairman-2.test/2015/other/'],
+    'a different slug' => ['https://uams-news.test/2015/01/09/something-else/'],
+]);
+
+test('rewrites only the first matching link of a kept item and only the kept item', function (): void {
+    $result = dispositionApply(
+        '<item><link>https://n.test/a/turnage-named-chairman-2/</link><link>https://n.test/b/turnage-named-chairman-2/</link><wp:post_id>20</wp:post_id><wp:post_type>post</wp:post_type><wp:post_name>turnage-named-chairman-2</wp:post_name></item>'
+        .'<item><link>https://n.test/c/an-unrelated-story/</link><wp:post_id>40</wp:post_id><wp:post_type>post</wp:post_type><wp:post_name>an-unrelated-story</wp:post_name></item>',
+    );
+
+    expect($result['wxr'])->toContain('<link>https://n.test/a/turnage-named-chairman/</link><link>https://n.test/b/turnage-named-chairman-2/</link>');
+    expect($result['wxr'])->toContain('<link>https://n.test/c/an-unrelated-story/</link>');
+});
+
+test('leaves a kept post at its canonical slug byte-identical, link included', function (): void {
+    $item = '<item><link>https://n.test/a/turnage-named-chairman/</link><wp:post_id>20</wp:post_id><wp:post_type>post</wp:post_type><wp:post_name><![CDATA[turnage-named-chairman]]></wp:post_name></item>';
+
+    expect(dispositionApply($item))->toBe(['wxr' => $item, 'dropped' => [], 'renamed' => []]);
+});
+
+test('treats a slug with regex special characters as literal text in the link', function (): void {
+    $disposition = Support::disposition([[
+        'canonical_slug' => 'canonical',
+        'keep' => Support::ref(1, 'a.b+c'),
+        'drop' => [Support::ref(2, 'other')],
+    ]]);
+    $item = '<item><link>https://n.test/aXbbc/</link><link>https://n.test/a.b+c/</link><wp:post_id>1</wp:post_id><wp:post_type>post</wp:post_type><wp:post_name>a.b+c</wp:post_name></item>';
+
+    expect(new ApplyDuplicateDisposition($disposition)->apply($item)['wxr'])->toContain('<link>https://n.test/aXbbc/</link><link>https://n.test/canonical/</link>');
+});
+
 function dispositionTempFile(string $contents): string
 {
     $path = tempnam(sys_get_temp_dir(), 'wxr-disposition-');
