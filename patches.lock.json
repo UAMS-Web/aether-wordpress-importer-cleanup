@@ -1,5 +1,5 @@
 {
-    "_hash": "f8e88b4613f16038e253e72ba3411250ebe489269fd97ac6cce351033406e873",
+    "_hash": "452b154035629de0d5c0984489844f2727525ebe4e0c7f7b171e473db02f9a4a",
     "patches": {
         "pestphp/pest-plugin-mutate": [
             {
@@ -86,7 +86,7 @@
                 "package": "pestphp/pest-plugin-mutate",
                 "description": "Propagate a mutation into isolated test processes and reject a test report that ran no tests, so an isolated run cannot score a mutant killed without running a test (temporary; see UAMS-Web/UAMSWP-Logo-List#82)",
                 "url": "vendor/uams-web/patches-pest-plugin-mutate/patches/pest-plugin-mutate-isolated-processes.patch",
-                "sha256": "c55ed9e33fb20bad54b824307a6676fa060b1d2f580cea5c52c088c401b9cd92",
+                "sha256": "8bc0b3925662aaa307fd857b987d43d2c99be9194db674f99d4a771fa1017360",
                 "depth": 1,
                 "extra": {
                     "provenance": "patches-file:patches.json"
@@ -96,7 +96,7 @@
                 "package": "pestphp/pest-plugin-mutate",
                 "description": "Map a class constant mutant to the tests covering its containing class, since a constant initializer has no executable coverage line (temporary)",
                 "url": "vendor/uams-web/patches-pest-plugin-mutate/patches/pest-plugin-mutate-class-constant-coverage.patch",
-                "sha256": "e09b3535c7a69db85b35366fd1c0aa676a5cf98d0671d8245323516f8018b8f4",
+                "sha256": "c8775fe4b006f7ca4e9dffb136853cd840545b5acc4f682fe3a6de25acc276dc",
                 "depth": 1,
                 "extra": {
                     "provenance": "patches-file:patches.json"
