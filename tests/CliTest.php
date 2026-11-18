@@ -121,6 +121,19 @@ test('rejects an unknown option and an unreadable disposition', function (string
     'missing disposition file' => ['--disposition='.__DIR__.'/fixtures/does-not-exist.json'],
 ]);
 
+test('reads its arguments from the command line, skipping the script name', function (string $message, string ...$args) {
+    [$exitCode, $stdout, $stderr] = runCli(array_values($args));
+
+    expect($exitCode)->toBe(1);
+    expect($stdout)->toBe('');
+    expect($stderr)->toContain($message);
+    expect($stderr)->toContain("Usage: wxr-cleanup [--disposition=<file.json>] <input.xml> [output.xml]\n");
+})->with([
+    'no arguments' => ['With output.xml: writes cleaned WXR to that file'],
+    'three paths' => ["Error: too many arguments\n", 'a.xml', 'b.xml', 'c.xml'],
+    'an unknown option, named' => ["Error: unknown option: --dispose=x.json\n", '--dispose=x.json', 'a.xml'],
+]);
+
 test('the disposition builder rejects an unknown option', function () {
     $command = escapeshellarg(PHP_BINARY).' '.escapeshellarg(dirname(__DIR__).'/bin/build-duplicate-disposition').' --exclude=x.txt --site=a --ticket=b --excluded=c out.json in.xml 2>&1';
     exec($command, $output, $exitCode);
