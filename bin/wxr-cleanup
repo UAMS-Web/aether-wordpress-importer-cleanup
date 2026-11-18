@@ -23,9 +23,16 @@ use UAMSWeb\Aether\WordPressImporter\Cleanup\Transform;
 
 $usage = "Usage: wxr-cleanup [--disposition=<file.json>] <input.xml> [output.xml]\n";
 
+// Read the arguments from $_SERVER rather than the global $argv, which static
+// analysis cannot prove is defined at file scope; keep only string values.
+$arguments = array_values(array_filter(
+    is_array($_SERVER['argv'] ?? null) ? $_SERVER['argv'] : [],
+    is_string(...),
+));
+
 $dispositionFile = null;
 $positional = [];
-foreach (array_slice($argv, 1) as $argument) {
+foreach (array_slice($arguments, 1) as $argument) {
     if (str_starts_with($argument, '--disposition=')) {
         $dispositionFile = substr($argument, strlen('--disposition='));
 
