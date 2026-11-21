@@ -172,9 +172,9 @@ test('reports the pass cap as one Error line, exits 1 and writes no output file'
 
         [$exitCode, $stdout, $stderr] = runCli([$input, $output], ['-d', 'auto_prepend_file='.$prepend]);
 
+        expect($stderr)->toBe("Error: Cleanup rules did not settle after 5 passes; a rule keeps undoing another rule's work.\n");
         expect($exitCode)->toBe(1);
         expect($stdout)->toBe('');
-        expect($stderr)->toBe("Error: Cleanup rules did not settle after 5 passes; a rule keeps undoing another rule's work.\n");
         expect(file_exists($output))->toBeFalse();
     } finally {
         @unlink($input);
