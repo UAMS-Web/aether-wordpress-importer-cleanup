@@ -170,7 +170,9 @@ test('reports the pass cap as one Error line, exits 1 and writes no output file'
             PHP);
         file_put_contents($prepend, str_replace('__AUTOLOAD__', dirname(__DIR__).'/vendor/autoload.php', (string) file_get_contents($prepend)));
 
-        [$exitCode, $stdout, $stderr] = runCli([$input, $output], ['-d', 'auto_prepend_file='.$prepend]);
+        // A Windows temporary directory can be an 8.3 short path (`RUNNER~1`), and the ini parser reads
+        // the `~` in an unquoted value as an operator, so the option gets the resolved long path.
+        [$exitCode, $stdout, $stderr] = runCli([$input, $output], ['-d', 'auto_prepend_file='.realpath($prepend)]);
 
         expect($stderr)->toBe("Error: Cleanup rules did not settle after 5 passes; a rule keeps undoing another rule's work.\n");
         expect($exitCode)->toBe(1);
