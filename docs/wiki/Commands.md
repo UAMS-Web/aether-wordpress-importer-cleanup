@@ -4,7 +4,7 @@ Written against `main` after v2.1.0.
 
 The package ships three commands in `bin/`. In a clone of this repository, run them with `php bin/<command>`: Composer does not link a package's own scripts into `vendor/bin` there. A project that installs the package through Composer gets them as `vendor/bin/<command>`.
 
-Each command writes an error to stderr as a line starting `Error:` and exits `1`, and exits `0` on success. The one exception is the 5-pass cap in `wxr-cleanup`, which stops the run with an uncaught exception instead (see [Troubleshooting](Troubleshooting.md#cleanup-rules-did-not-settle-after-5-passes)).
+Each command writes an error to stderr as a line starting `Error:` and exits `1`, and exits `0` on success. The 5-pass cap in `wxr-cleanup` is reported the same way (see [Troubleshooting](Troubleshooting.md#cleanup-rules-did-not-settle-after-5-passes)).
 
 ## `wxr-cleanup`
 

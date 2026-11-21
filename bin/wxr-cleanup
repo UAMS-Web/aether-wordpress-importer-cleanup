@@ -105,7 +105,7 @@ $transform = Transform::withDefaultRules();
 
 try {
     ['wxr' => $result, 'emptied' => $emptied] = $transform->applyReporting($wxr);
-} catch (InvalidArgumentException $exception) {
+} catch (InvalidArgumentException|RuntimeException $exception) {
     fwrite(STDERR, "Error: {$exception->getMessage()}
 ");
     exit(1);
