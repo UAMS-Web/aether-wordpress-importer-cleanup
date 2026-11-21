@@ -32,10 +32,10 @@ Error: Post 16831 has slug "example-slug" in this export, but the disposition re
 ## Cleanup rules did not settle after 5 passes
 
 ```
-Cleanup rules did not settle after 5 passes; a rule keeps undoing another rule's work.
+Error: Cleanup rules did not settle after 5 passes; a rule keeps undoing another rule's work.
 ```
 
-**Cause:** a field was still changing after 5 cleanup passes, so one rule is undoing another rule's work on some input. The run stops with an uncaught `RuntimeException` carrying this message, and no output is written, rather than writing a half-settled body.
+**Cause:** a field was still changing after 5 cleanup passes, so one rule is undoing another rule's work on some input. The run prints this `Error:` line, exits `1` and writes no output, rather than writing a half-settled body.
 
 **Fix:** report it with the post that triggers it ([Project](Project.md#reporting-a-problem)). The two rules need their order or their match conditions changed; raising the cap would only hide the loop.
 

@@ -168,6 +168,7 @@ final class Transform
      * @return string Cleaned WXR XML
      *
      * @throws InvalidArgumentException When the input is empty once invalid XML characters are stripped
+     * @throws RuntimeException When a field is still changing after the pass cap
      */
     public function apply(string $wxr): string
     {
@@ -185,6 +186,7 @@ final class Transform
      *                                                   every item whose non-empty body cleaned to nothing
      *
      * @throws InvalidArgumentException When the input is empty once invalid XML characters are stripped
+     * @throws RuntimeException When a field is still changing after the pass cap
      */
     public function applyReporting(string $wxr): array
     {

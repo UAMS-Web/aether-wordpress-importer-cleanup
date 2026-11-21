@@ -134,6 +134,57 @@ test('reads its arguments from the command line, skipping the script name', func
     'an unknown option, named' => ["Error: unknown option: --dispose=x.json\n", '--dispose=x.json', 'a.xml'],
 ]);
 
+test('reports the pass cap as one Error line, exits 1 and writes no output file', function () {
+    $dir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'wxr-cleanup-cap-'.bin2hex(random_bytes(4));
+    $input = $dir.DIRECTORY_SEPARATOR.'in.xml';
+    $output = $dir.DIRECTORY_SEPARATOR.'out.xml';
+    $prepend = $dir.DIRECTORY_SEPARATOR.'never-settles.php';
+
+    if (! mkdir($dir)) {
+        throw new RuntimeException('Could not create temporary directory');
+    }
+
+    try {
+        file_put_contents($input, Support::wxr([['id' => 41, 'slug' => 'capped', 'body' => '<p>Text</p>']]));
+        // Stands in for the first default rule and adds a paragraph on every pass, so
+        // no input of the real rules needs to be found that reaches the cap.
+        file_put_contents($prepend, <<<'PHP'
+            <?php
+
+            namespace UAMSWeb\Aether\WordPressImporter\Cleanup\Rules;
+
+            use Dom\HTMLDocument;
+            use UAMSWeb\Aether\WordPressImporter\Cleanup\Rule;
+
+            require '__AUTOLOAD__';
+
+            final class StripHtmlComments implements Rule
+            {
+                public function apply(HTMLDocument $document): void
+                {
+                    $paragraph = $document->createElement('p');
+                    $paragraph->textContent = 'again';
+                    $document->getElementsByTagName('body')->item(0)?->appendChild($paragraph);
+                }
+            }
+            PHP);
+        file_put_contents($prepend, str_replace('__AUTOLOAD__', dirname(__DIR__).'/vendor/autoload.php', (string) file_get_contents($prepend)));
+
+        // A Windows temporary directory can be an 8.3 short path (`RUNNER~1`), and the ini parser reads
+        // the `~` in an unquoted value as an operator, so the option gets the resolved long path.
+        [$exitCode, $stdout, $stderr] = runCli([$input, $output], ['-d', 'auto_prepend_file='.realpath($prepend)]);
+
+        expect($stderr)->toBe("Error: Cleanup rules did not settle after 5 passes; a rule keeps undoing another rule's work.\n");
+        expect($exitCode)->toBe(1);
+        expect($stdout)->toBe('');
+        expect(file_exists($output))->toBeFalse();
+    } finally {
+        @unlink($input);
+        @unlink($prepend);
+        @rmdir($dir);
+    }
+});
+
 test('the disposition builder rejects an unknown option', function () {
     $command = escapeshellarg(PHP_BINARY).' '.escapeshellarg(dirname(__DIR__).'/bin/build-duplicate-disposition').' --exclude=x.txt --site=a --ticket=b --excluded=c out.json in.xml 2>&1';
     exec($command, $output, $exitCode);
@@ -144,11 +195,16 @@ test('the disposition builder rejects an unknown option', function () {
 
 /**
  * @param  list<string>  $args
+ * @param  list<string>  $phpArgs  Options for the PHP binary, placed before the script
  * @return array{0: int, 1: string, 2: string} The exit code, stdout, and stderr
  */
-function runCli(array $args): array
+function runCli(array $args, array $phpArgs = []): array
 {
-    $command = escapeshellarg(PHP_BINARY).' '.escapeshellarg(dirname(__DIR__).'/bin/wxr-cleanup');
+    $command = escapeshellarg(PHP_BINARY);
+    foreach ($phpArgs as $phpArg) {
+        $command .= ' '.escapeshellarg($phpArg);
+    }
+    $command .= ' '.escapeshellarg(dirname(__DIR__).'/bin/wxr-cleanup');
     foreach ($args as $arg) {
         $command .= ' '.escapeshellarg($arg);
     }
