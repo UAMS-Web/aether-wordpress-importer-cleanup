@@ -4,6 +4,43 @@
     "permalink_base": "https://news.uams.edu",
     "sets": [
         {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "uams-sponsored-midsouth-summit-black-expo-celebrates-black-history-month-with-health-screenings-and-more",
+            "keep": {
+                "post_id": 11928,
+                "slug": "uams-sponsored-midsouth-summit-black-expo-celebrates-black-history-month-with-health-screenings-and-more-2",
+                "date": "2007-02-12"
+            },
+            "drop": [
+                {
+                    "post_id": 11572,
+                    "slug": "uams-sponsored-midsouth-summit-black-expo-celebrates-black-history-month-with-health-screenings-and-more",
+                    "date": "2005-02-04"
+                }
+            ]
+        },
+        {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "college-of-public-health-is-cdc-prevention-research-center",
+            "keep": {
+                "post_id": 17031,
+                "slug": "collegeofpublichealthiscdcpreventionresearchcenter",
+                "date": "2008-04-14"
+            },
+            "drop": [
+                {
+                    "post_id": 12256,
+                    "slug": "college-of-public-health-is-cdc-prevention-research-center",
+                    "date": "2009-04-14"
+                },
+                {
+                    "post_id": 12312,
+                    "slug": "college-of-public-health-is-cdc-prevention-research-center-2",
+                    "date": "2009-04-14"
+                }
+            ]
+        },
+        {
             "ticket": "UAMS-Web/uams-statamic#46",
             "canonical_slug": "former-student-delivers-inaugural-yasargil-lecture-at-uams",
             "keep": {
@@ -69,6 +106,22 @@
                     "post_id": 16829,
                     "slug": "uamsdoctoralcandidatesreceivewhitecoatsatceremony",
                     "date": "2008-10-08"
+                }
+            ]
+        },
+        {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "mobile-spa-a-treat-for-breast-cancer-patients-caregivers",
+            "keep": {
+                "post_id": 12286,
+                "slug": "mobile-spa-a-treat-for-breast-cancer-patients-caregivers",
+                "date": "2008-10-10"
+            },
+            "drop": [
+                {
+                    "post_id": 16827,
+                    "slug": "mobilespaatreatforbreastcancerpatientscaregivers",
+                    "date": "2008-10-10"
                 }
             ]
         },
@@ -366,6 +419,22 @@
             ]
         },
         {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "uams-department-of-orthopaedics-reaches-out-to-homeless",
+            "keep": {
+                "post_id": 12222,
+                "slug": "uams-department-of-orthopaedics-reaches-out-to-homeless",
+                "date": "2008-11-24"
+            },
+            "drop": [
+                {
+                    "post_id": 16806,
+                    "slug": "uamsdepartmentoforthopaedicsreachesouttohomeless",
+                    "date": "2008-11-24"
+                }
+            ]
+        },
+        {
             "ticket": "UAMS-Web/uams-statamic#46",
             "canonical_slug": "glass-art-graces-uams-psychiatric-research-institute",
             "keep": {
@@ -504,6 +573,27 @@
             ]
         },
         {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "patient-receives-stents-and-bypass-a-uams-first",
+            "keep": {
+                "post_id": 12292,
+                "slug": "patient-receives-stents-and-bypass-a-uams-first",
+                "date": "2009-01-06"
+            },
+            "drop": [
+                {
+                    "post_id": 16870,
+                    "slug": "patientreceivesstentsandbypassauamsfirst",
+                    "date": "2009-01-06"
+                },
+                {
+                    "post_id": 27898,
+                    "slug": "patient-receives-stents-and-bypass-a-uams-first-2",
+                    "date": "2015-06-30"
+                }
+            ]
+        },
+        {
             "ticket": "UAMS-Web/uams-statamic#46",
             "canonical_slug": "wei-named-executive-director-of-institute-on-aging",
             "keep": {
@@ -585,6 +675,32 @@
                     "post_id": 16935,
                     "slug": "uamsfacultymemberreceivesnationalaward",
                     "date": "2009-01-23"
+                }
+            ]
+        },
+        {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "uams-psychiatric-research-institute-northwest-names-medical-director-clinical-manager",
+            "keep": {
+                "post_id": 12271,
+                "slug": "uams-psychiatric-research-institute-northwest-names-medical-director-clinical-manager-2",
+                "date": "2009-01-27"
+            },
+            "drop": [
+                {
+                    "post_id": 12250,
+                    "slug": "uams-psychiatric-research-institute-northwest-names-medical-director-clinical-manager",
+                    "date": "2009-01-27"
+                },
+                {
+                    "post_id": 12489,
+                    "slug": "uams-psychiatric-research-institute-northwest-names-medical-director-clinical-manager-3",
+                    "date": "2009-01-27"
+                },
+                {
+                    "post_id": 16918,
+                    "slug": "uamspsychiatricresearchinstitutenorthwestnamesmedicaldirectorclinicalmanager",
+                    "date": "2009-01-27"
                 }
             ]
         },
@@ -802,6 +918,27 @@
             ]
         },
         {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "uams-opens-telemedicine-training-center",
+            "keep": {
+                "post_id": 12266,
+                "slug": "uams-opens-telemedicine-training-center",
+                "date": "2009-04-01"
+            },
+            "drop": [
+                {
+                    "post_id": 17010,
+                    "slug": "uamsopenstelemedicinetrainingcenter",
+                    "date": "2009-04-01"
+                },
+                {
+                    "post_id": 12310,
+                    "slug": "uams-opens-telemedicine-training-center-2",
+                    "date": "2009-04-02"
+                }
+            ]
+        },
+        {
             "ticket": "UAMS-Web/uams-statamic#46",
             "canonical_slug": "family-home-golf-classic-april-23-to-benefit-patients-at-uams",
             "keep": {
@@ -834,6 +971,27 @@
             ]
         },
         {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "uams-claudia-beverly-aging-initiative-honored-by-legislature",
+            "keep": {
+                "post_id": 12311,
+                "slug": "uams-claudia-beverly-aging-initiative-honored-by-legislature-2",
+                "date": "2009-04-08"
+            },
+            "drop": [
+                {
+                    "post_id": 12268,
+                    "slug": "uams-claudia-beverly-aging-initiative-honored-by-legislature",
+                    "date": "2009-04-08"
+                },
+                {
+                    "post_id": 17013,
+                    "slug": "uamsclaudiabeverlyaginginitiativehonoredbylegislature",
+                    "date": "2009-04-08"
+                }
+            ]
+        },
+        {
             "ticket": "UAMS-Web/uams-statamic#46",
             "canonical_slug": "safar-accepts-inaugural-martha-wood-bentley-chair-in-ophthalmology",
             "keep": {
@@ -846,6 +1004,32 @@
                     "post_id": 17030,
                     "slug": "safaracceptsinauguralmarthawoodbentleychairinophthalmology",
                     "date": "2009-04-10"
+                }
+            ]
+        },
+        {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "uams-seeks-stroke-patients-for-study-on-preventing-falls",
+            "keep": {
+                "post_id": 12313,
+                "slug": "uams-seeks-stroke-patients-for-study-on-preventing-falls-2",
+                "date": "2009-04-15"
+            },
+            "drop": [
+                {
+                    "post_id": 12257,
+                    "slug": "uams-seeks-stroke-patients-for-study-on-preventing-falls",
+                    "date": "2009-04-15"
+                },
+                {
+                    "post_id": 12673,
+                    "slug": "uams-seeks-stroke-patients-for-study-on-preventing-falls-3",
+                    "date": "2009-04-15"
+                },
+                {
+                    "post_id": 17035,
+                    "slug": "uamsseeksstrokepatientsforstudyonpreventingfalls",
+                    "date": "2009-04-15"
                 }
             ]
         },
@@ -914,6 +1098,69 @@
             ]
         },
         {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "walking-track-named-for-u-s-sen-lincoln",
+            "keep": {
+                "post_id": 12253,
+                "slug": "walking-track-named-for-u-s-sen-lincoln",
+                "date": "2009-04-28"
+            },
+            "drop": [
+                {
+                    "post_id": 17057,
+                    "slug": "walkingtracknamedforussenlincoln",
+                    "date": "2009-04-28"
+                }
+            ]
+        },
+        {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "inpatient-mental-health-unit-opens-in-northwest-arkansas",
+            "keep": {
+                "post_id": 12304,
+                "slug": "inpatient-mental-health-unit-opens-in-northwest-arkansas-2",
+                "date": "2009-04-30"
+            },
+            "drop": [
+                {
+                    "post_id": 12254,
+                    "slug": "inpatient-mental-health-unit-opens-in-northwest-arkansas",
+                    "date": "2009-04-30"
+                },
+                {
+                    "post_id": 17061,
+                    "slug": "inpatientmentalhealthunitopensinnorthwestarkansas",
+                    "date": "2009-04-30"
+                }
+            ]
+        },
+        {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "uams-research-lab-named-for-grateful-patient",
+            "keep": {
+                "post_id": 12305,
+                "slug": "uams-research-lab-named-for-grateful-patient-2",
+                "date": "2009-05-05"
+            },
+            "drop": [
+                {
+                    "post_id": 12471,
+                    "slug": "uams-research-lab-named-for-grateful-patient-3",
+                    "date": "2009-04-23"
+                },
+                {
+                    "post_id": 17068,
+                    "slug": "uamsresearchlabnamedforgratefulpatient",
+                    "date": "2009-05-05"
+                },
+                {
+                    "post_id": 12255,
+                    "slug": "uams-research-lab-named-for-grateful-patient",
+                    "date": "2009-05-06"
+                }
+            ]
+        },
+        {
             "ticket": "UAMS-Web/uams-statamic#46",
             "canonical_slug": "cooks-tour-events-raise-funds-for-patient-services",
             "keep": {
@@ -942,6 +1189,27 @@
                     "post_id": 17080,
                     "slug": "uamsseesophthalmicmedtechsstatureraised",
                     "date": "2009-05-08"
+                }
+            ]
+        },
+        {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "friends-supporters-tee-up-for-paul-dunn-classic-to-aid-als-research",
+            "keep": {
+                "post_id": 12299,
+                "slug": "friends-supporters-tee-up-for-paul-dunn-classic-to-aid-als-research-2",
+                "date": "2009-05-12"
+            },
+            "drop": [
+                {
+                    "post_id": 12274,
+                    "slug": "friends-supporters-tee-up-for-paul-dunn-classic-to-aid-als-research",
+                    "date": "2009-05-12"
+                },
+                {
+                    "post_id": 17082,
+                    "slug": "friendssupportersteeupforpauldunnclassictoaidalsresearch",
+                    "date": "2009-05-12"
                 }
             ]
         },
@@ -994,6 +1262,22 @@
             ]
         },
         {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "long-term-campsites-offer-option-for-uams-patients",
+            "keep": {
+                "post_id": 12193,
+                "slug": "long-term-campsites-offer-option-for-uams-patients",
+                "date": "2009-05-22"
+            },
+            "drop": [
+                {
+                    "post_id": 17137,
+                    "slug": "longtermcampsitesofferoptionforuamspatients",
+                    "date": "2009-05-22"
+                }
+            ]
+        },
+        {
             "ticket": "UAMS-Web/uams-statamic#46",
             "canonical_slug": "grant-to-fund-clinical-trial-for-earlier-cancer-diagnoses",
             "keep": {
@@ -1042,6 +1326,32 @@
             ]
         },
         {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "uams-aging-institute-receives-33-4-million-from-reynolds-foundation",
+            "keep": {
+                "post_id": 12847,
+                "slug": "uams-aging-institute-receives-33-4-million-from-reynolds-foundation-3",
+                "date": "2009-06-04"
+            },
+            "drop": [
+                {
+                    "post_id": 12220,
+                    "slug": "uams-aging-institute-receives-33-4-million-from-reynolds-foundation",
+                    "date": "2009-06-04"
+                },
+                {
+                    "post_id": 12844,
+                    "slug": "uams-aging-institute-receives-33-4-million-from-reynolds-foundation-2",
+                    "date": "2009-06-04"
+                },
+                {
+                    "post_id": 17158,
+                    "slug": "uamsaginginstitutereceives334millionfromreynoldsfoundation",
+                    "date": "2009-06-04"
+                }
+            ]
+        },
+        {
             "ticket": "UAMS-Web/uams-statamic#46",
             "canonical_slug": "mckelvey-becomes-inaugural-recipient-of-chair-in-clinical-genetics",
             "keep": {
@@ -1070,6 +1380,32 @@
                     "post_id": 17191,
                     "slug": "hpvresearchbringsuamsphysiciannationalaward",
                     "date": "2009-06-23"
+                }
+            ]
+        },
+        {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "uams-telemedicine-stroke-program-saves-mena-woman",
+            "keep": {
+                "post_id": 12301,
+                "slug": "uams-telemedicine-stroke-program-saves-mena-woman",
+                "date": "2009-06-23"
+            },
+            "drop": [
+                {
+                    "post_id": 12679,
+                    "slug": "uams-telemedicine-stroke-program-saves-mena-woman-2",
+                    "date": "2009-06-23"
+                },
+                {
+                    "post_id": 17193,
+                    "slug": "uamstelemedicinestrokeprogramsavesmenawoman",
+                    "date": "2009-06-23"
+                },
+                {
+                    "post_id": 28206,
+                    "slug": "uams-telemedicine-stroke-program-saves-mena-woman-3",
+                    "date": "2015-08-10"
                 }
             ]
         },
@@ -1148,6 +1484,27 @@
             ]
         },
         {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "uams-awarded-nearly-20-million-for-clinical-and-translational-research",
+            "keep": {
+                "post_id": 12295,
+                "slug": "uams-awarded-nearly-20-million-for-clinical-and-translational-research-2",
+                "date": "2009-07-14"
+            },
+            "drop": [
+                {
+                    "post_id": 12478,
+                    "slug": "uams-awarded-nearly-20-million-for-clinical-and-translational-research-3",
+                    "date": "2009-07-14"
+                },
+                {
+                    "post_id": 17250,
+                    "slug": "uamsawardednearly20millionforclinicalandtranslationalresearch",
+                    "date": "2009-07-14"
+                }
+            ]
+        },
+        {
             "ticket": "UAMS-Web/uams-statamic#46",
             "canonical_slug": "mountain-home-firefighters-donate-2500-to-uams-for-als-research",
             "keep": {
@@ -1201,6 +1558,27 @@
             ]
         },
         {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "new-device-unclogs-stroke-patients-veins-in-brain",
+            "keep": {
+                "post_id": 12298,
+                "slug": "new-device-unclogs-stroke-patients-veins-in-brain",
+                "date": "2009-07-30"
+            },
+            "drop": [
+                {
+                    "post_id": 17277,
+                    "slug": "newdeviceunclogsstrokepatientsveinsinbrain",
+                    "date": "2009-07-30"
+                },
+                {
+                    "post_id": 28187,
+                    "slug": "new-device-unclogs-stroke-patients-veins-in-brain-2",
+                    "date": "2011-08-14"
+                }
+            ]
+        },
+        {
             "ticket": "UAMS-Web/uams-statamic#46",
             "canonical_slug": "uams-opens-states-first-adult-genetics-clinic",
             "keep": {
@@ -1213,6 +1591,22 @@
                     "post_id": 12490,
                     "slug": "uams-opens-states-first-adult-genetics-clinic",
                     "date": "2009-08-04"
+                }
+            ]
+        },
+        {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "uams-blackhawks-flex-emergency-preparedness-muscle",
+            "keep": {
+                "post_id": 12519,
+                "slug": "uams-blackhawks-flex-emergency-preparedness-muscle",
+                "date": "2009-08-07"
+            },
+            "drop": [
+                {
+                    "post_id": 17297,
+                    "slug": "uamsblackhawksflexemergencypreparednessmuscle",
+                    "date": "2009-08-07"
                 }
             ]
         },
@@ -1330,6 +1724,43 @@
                     "post_id": 12420,
                     "slug": "nanotechnology-team-captures-tumor-cells-in-bloodstream",
                     "date": "2009-11-17"
+                }
+            ]
+        },
+        {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "preemie-success-stories-displayed-on-uams-wall-of-hope",
+            "keep": {
+                "post_id": 12592,
+                "slug": "preemie-success-stories-displayed-on-uams-wall-of-hope-2",
+                "date": "2009-11-17"
+            },
+            "drop": [
+                {
+                    "post_id": 12433,
+                    "slug": "preemie-success-stories-displayed-on-uams-wall-of-hope",
+                    "date": "2009-11-17"
+                },
+                {
+                    "post_id": 27877,
+                    "slug": "preemie-success-stories-displayed-on-uams-wall-of-hope-3",
+                    "date": "2014-06-27"
+                }
+            ]
+        },
+        {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "uams-gets-3-1-million-grant-to-find-drug-treatment-for-alcoholism",
+            "keep": {
+                "post_id": 12348,
+                "slug": "uams-gets-3-1-million-grant-to-find-drug-treatment-for-alcoholism",
+                "date": "2009-11-30"
+            },
+            "drop": [
+                {
+                    "post_id": 12705,
+                    "slug": "uams-gets-3-1-million-grant-to-find-drug-treatment-for-alcoholism-2",
+                    "date": "2009-12-01"
                 }
             ]
         },
@@ -1494,6 +1925,22 @@
             ]
         },
         {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "uams-hosea-long-receives-national-award-for-distinguished-service",
+            "keep": {
+                "post_id": 12575,
+                "slug": "uams-hosea-long-receives-national-award-for-distinguished-service",
+                "date": "2010-09-22"
+            },
+            "drop": [
+                {
+                    "post_id": 12655,
+                    "slug": "uams-hosea-long-receives-national-award-for-distinguished-service-2",
+                    "date": "2010-11-30"
+                }
+            ]
+        },
+        {
             "ticket": "UAMS-Web/uams-statamic#46",
             "canonical_slug": "uams-medical-center-becomes-first-in-state-designated-level-i-trauma-center",
             "keep": {
@@ -1510,6 +1957,22 @@
             ]
         },
         {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "uams-invests-rahn-in-harry-p-ward-chancellors-chair",
+            "keep": {
+                "post_id": 12585,
+                "slug": "uams-invests-rahn-in-harry-p-ward-chancellors-chair-2",
+                "date": "2010-09-30"
+            },
+            "drop": [
+                {
+                    "post_id": 12584,
+                    "slug": "uams-invests-rahn-in-harry-p-ward-chancellors-chair",
+                    "date": "2010-09-30"
+                }
+            ]
+        },
+        {
             "ticket": "UAMS-Web/uams-statamic#46",
             "canonical_slug": "arkansas-to-get-30-more-family-medicine-resident-physicians",
             "keep": {
@@ -1522,6 +1985,43 @@
                     "post_id": 12756,
                     "slug": "arkansas-to-get-30-more-family-medicine-resident-physicians",
                     "date": "2010-10-06"
+                }
+            ]
+        },
+        {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "saint-marys-in-russellville-joins-emergency-stroke-care-program",
+            "keep": {
+                "post_id": 12819,
+                "slug": "saint-marys-in-russellville-joins-emergency-stroke-care-program-2",
+                "date": "2010-11-01"
+            },
+            "drop": [
+                {
+                    "post_id": 12817,
+                    "slug": "saint-marys-in-russellville-joins-emergency-stroke-care-program",
+                    "date": "2010-11-01"
+                }
+            ]
+        },
+        {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "scarless-hysterectomy-gives-mom-quick-recovery",
+            "keep": {
+                "post_id": 12823,
+                "slug": "scarless-hysterectomy-gives-mom-quick-recovery",
+                "date": "2010-11-09"
+            },
+            "drop": [
+                {
+                    "post_id": 25931,
+                    "slug": "scarless-hysterectomy-gives-mom-quick-recovery-3",
+                    "date": "2015-07-16"
+                },
+                {
+                    "post_id": 27694,
+                    "slug": "scarless-hysterectomy-gives-mom-quick-recovery-2",
+                    "date": "2015-08-03"
                 }
             ]
         },
@@ -1590,6 +2090,22 @@
             ]
         },
         {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "paintings-with-healing-message-donated-to-child-study-center",
+            "keep": {
+                "post_id": 13031,
+                "slug": "paintings-with-healing-message-donated-to-child-study-center-2",
+                "date": "2011-04-05"
+            },
+            "drop": [
+                {
+                    "post_id": 13030,
+                    "slug": "paintings-with-healing-message-donated-to-child-study-center",
+                    "date": "2011-04-05"
+                }
+            ]
+        },
+        {
             "ticket": "UAMS-Web/uams-statamic#46",
             "canonical_slug": "uams-names-frazier-college-of-nursing-dean",
             "keep": {
@@ -1618,6 +2134,22 @@
                     "post_id": 13417,
                     "slug": "statewide-cord-blood-bank-celebrates-grand-opening-at-uams-2",
                     "date": "2011-07-19"
+                }
+            ]
+        },
+        {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "pathway-helps-crossett-man-survive-ruptured-aorta",
+            "keep": {
+                "post_id": 13511,
+                "slug": "pathway-helps-crossett-man-survive-ruptured-aorta",
+                "date": "2011-08-23"
+            },
+            "drop": [
+                {
+                    "post_id": 27893,
+                    "slug": "pathway-helps-crossett-man-survive-ruptured-aorta-2",
+                    "date": "2015-07-09"
                 }
             ]
         },
@@ -1702,6 +2234,22 @@
             ]
         },
         {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "uams-opens-radiation-oncology-center",
+            "keep": {
+                "post_id": 12944,
+                "slug": "uams-opens-radiation-oncology-center",
+                "date": "2012-07-03"
+            },
+            "drop": [
+                {
+                    "post_id": 12946,
+                    "slug": "uams-opens-radiation-oncology-center-2",
+                    "date": "2012-07-03"
+                }
+            ]
+        },
+        {
             "ticket": "UAMS-Web/uams-statamic#46",
             "canonical_slug": "uams-establishes-center-for-dental-education",
             "keep": {
@@ -1746,6 +2294,22 @@
                     "post_id": 12998,
                     "slug": "uams-receives-180000-for-teacher-health-education-2",
                     "date": "2012-09-11"
+                }
+            ]
+        },
+        {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "uams-celebrates-opening-of-12th-street-student-led-community-health-center",
+            "keep": {
+                "post_id": 13241,
+                "slug": "uams-celebrates-opening-of-12th-street-student-led-community-health-center-2",
+                "date": "2012-12-07"
+            },
+            "drop": [
+                {
+                    "post_id": 12970,
+                    "slug": "uams-celebrates-opening-of-12th-street-student-led-community-health-center",
+                    "date": "2012-12-10"
                 }
             ]
         },
@@ -1894,6 +2458,22 @@
             ]
         },
         {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "wife-uams-save-crossett-man-from-lung-cancer",
+            "keep": {
+                "post_id": 27834,
+                "slug": "wife-uams-save-crossett-man-from-lung-cancer-2",
+                "date": "2014-05-05"
+            },
+            "drop": [
+                {
+                    "post_id": 13400,
+                    "slug": "wife-uams-save-crossett-man-from-lung-cancer",
+                    "date": "2011-01-11"
+                }
+            ]
+        },
+        {
             "ticket": "UAMS-Web/uams-statamic#46",
             "canonical_slug": "william-brooks-gentry-m-d-appointed-chair-of-the-uams-department-of-anesthesiology",
             "keep": {
@@ -1906,6 +2486,22 @@
                     "post_id": 13817,
                     "slug": "william-brooks-gentry-m-d-appointed-chair-of-the-uams-department-of-anesthesiology-2",
                     "date": "2014-05-07"
+                }
+            ]
+        },
+        {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "uams-graduates-931-new-health-care-professionals",
+            "keep": {
+                "post_id": 13826,
+                "slug": "uams-graduates-931-new-health-care-professionals",
+                "date": "2014-05-17"
+            },
+            "drop": [
+                {
+                    "post_id": 13828,
+                    "slug": "uams-graduates-931-new-health-care-professionals-2",
+                    "date": "2014-05-19"
                 }
             ]
         },
@@ -1954,6 +2550,22 @@
                     "post_id": 13863,
                     "slug": "uams-winthrop-p-rockefeller-cancer-institute-benefits-from-charitable-shoe-sale-on-qvc-2",
                     "date": "2014-07-28"
+                }
+            ]
+        },
+        {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "people-dont-just-work-here",
+            "keep": {
+                "post_id": 14153,
+                "slug": "people-dont-just-work-here",
+                "date": "2014-09-26"
+            },
+            "drop": [
+                {
+                    "post_id": 28292,
+                    "slug": "people-dont-just-work-here-2",
+                    "date": "2012-08-19"
                 }
             ]
         },
@@ -2022,6 +2634,22 @@
             ]
         },
         {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "varicose-vein-treatment-gives-educator-extra-pep",
+            "keep": {
+                "post_id": 14203,
+                "slug": "varicose-vein-treatment-gives-educator-extra-pep",
+                "date": "2015-01-29"
+            },
+            "drop": [
+                {
+                    "post_id": 28060,
+                    "slug": "varicose-vein-treatment-gives-educator-extra-pep-2",
+                    "date": "2012-08-11"
+                }
+            ]
+        },
+        {
             "ticket": "UAMS-Web/uams-statamic#46",
             "canonical_slug": "uams-receives-1-3-million-from-arkansas-blue-cross-and-blue-shield-blue-you-foundation-to-establish-chair-expand-programs",
             "keep": {
@@ -2034,6 +2662,22 @@
                     "post_id": 13775,
                     "slug": "uams-receives-1-3-million-from-arkansas-blue-cross-and-blue-shield-blue-you-foundation-to-establish-chair-expand-programs",
                     "date": "2015-02-09"
+                }
+            ]
+        },
+        {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "uams-names-stephen-mette-new-chief-clinical-officer",
+            "keep": {
+                "post_id": 14132,
+                "slug": "uams-names-stephen-mette-new-chief-clinical-officer",
+                "date": "2015-06-10"
+            },
+            "drop": [
+                {
+                    "post_id": 23531,
+                    "slug": "uams-names-stephen-mette-new-chief-clinical-officer-2",
+                    "date": "2015-06-10"
                 }
             ]
         },
@@ -2162,6 +2806,22 @@
                     "post_id": 31510,
                     "slug": "nih-funds-uams-study-of-depression-program-in-delta-2",
                     "date": "2016-06-02"
+                }
+            ]
+        },
+        {
+            "ticket": "UAMS-Web/uams-statamic-archive#1639",
+            "canonical_slug": "pharmacy-students-create-drug-counseling-videos-for-youtube",
+            "keep": {
+                "post_id": 115568,
+                "slug": "pharmacy-students-create-drug-counseling-videos-for-youtube-2",
+                "date": "2018-07-02"
+            },
+            "drop": [
+                {
+                    "post_id": 40263,
+                    "slug": "pharmacy-students-create-drug-counseling-videos-for-youtube",
+                    "date": "2018-07-02"
                 }
             ]
         },
