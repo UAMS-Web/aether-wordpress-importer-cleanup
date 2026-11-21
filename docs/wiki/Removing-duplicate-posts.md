@@ -23,7 +23,7 @@ Applying a disposition:
 
 ## Rebuild the news.uams.edu sets
 
-`dispositions/news-uams-edu.json` holds 140 sets, decided on [`UAMS-Web/uams-statamic#46`](https://github.com/UAMS-Web/uams-statamic/issues/46). `bin/build-duplicate-disposition` rebuilds it from the news export by the rule in `DuplicateSetFinder`:
+`dispositions/news-uams-edu.json` holds 175 sets: 140 decided by rule on [`UAMS-Web/uams-statamic#46`](https://github.com/UAMS-Web/uams-statamic/issues/46), and 35 that an editor confirmed one at a time on [`UAMS-Web/uams-statamic-archive#1639`](https://github.com/UAMS-Web/uams-statamic-archive/issues/1639) (35 duplicates, 55 dropped posts; the ten sets recorded as distinct are not in the file, and two sets are split, so their distinct member is kept and not redirected). Each set names its ticket. `bin/build-duplicate-disposition` rebuilds the first 140 from the news export by the rule in `DuplicateSetFinder`:
 
 - **Group** posts whose slugs match once hyphens and any trailing `-N` are removed, and whose publish dates fall on the same day.
 - **Guard:** a trailing `-N` is removed for grouping only when the set also has a member with that slug minus the number, or when the members' titles match (case, whitespace and curly quotes folded).
@@ -37,7 +37,7 @@ php bin/build-duplicate-disposition --site=news.uams.edu --ticket='UAMS-Web/uams
     wordpress-export_news-uams-edu.000.xml wordpress-export_news-uams-edu.001.xml wordpress-export_news-uams-edu.002.xml
 ```
 
-It prints `Read N posts; wrote M sets to <file>.` Rebuilding after the export changes rewrites the whole file, so review the diff before committing it.
+It prints `Read N posts; wrote M sets to <file>.` Rebuilding after the export changes rewrites the whole file, and the rebuild does not know the 35 sets confirmed on #1639: it leaves them out, because their permalinks are in the excluded list. Put them back (every set whose `ticket` is `UAMS-Web/uams-statamic-archive#1639`) before committing, and review the diff.
 
 ## Write the redirect pairs
 
