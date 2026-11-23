@@ -36,6 +36,13 @@ jobs:
       # On a pull request the mutate job mutates the changed PHP files under this path. On a push it
       # ignores this input and runs `composer mutate`, whose `--path=src` covers the same tree.
       mutate-paths: src
+      # PARITY: the `changed-tests` entry in local-ci.json runs the same script, so a change to
+      # this input or to the paths below goes with a change to that entry. The report runs a pull
+      # request's changed test files against the base branch's source and never gates a merge. Every
+      # test directory here runs without a host application, so the default `tests` is named
+      # explicitly rather than left to the shared workflow's default.
+      changed-tests: true
+      changed-tests-paths: tests
 
   mutate-ignore-breadth:
     name: Mutation annotations (breadth)

@@ -78,6 +78,16 @@
         "vendor/pestphp/pest-plugin-mutate",
         ".claude/skills/pest-testing/scripts/check-mutate-ignore-breadth.php"
       ]
+    },
+    {
+      "name": "changed-tests",
+      "run": "node .claude/skills/pest-testing/scripts/changed-tests-against-base.mjs --base origin/main",
+      "paths": [
+        "tests/**"
+      ],
+      "requires": [
+        ".claude/skills/pest-testing/scripts/changed-tests-against-base.mjs"
+      ]
     }
   ]
 }
