@@ -3,16 +3,11 @@
 # installed the toolchain and run composer install.
 set -euo pipefail
 
-# This library ignores its generated lock. Retain it when current, but do not let a stale snapshot
-# keep dependencies incompatible with the current manifest.
-if [[ -f composer.lock ]] && ! composer validate --check-lock --no-check-publish --no-check-all; then
-    if ! git check-ignore --quiet composer.lock; then
-        echo 'Composer lock is stale and is not ignored; update it explicitly before setup.' >&2
-        exit 1
-    fi
-    echo 'Removing the stale ignored Composer lock and resolving dependencies again.'
-    rm -- composer.lock
-    composer install --no-interaction --no-progress --prefer-dist
+# This library tracks its lock. The shared setup has already installed from it; a lock that no
+# longer matches composer.json is a change to make explicitly and review, never one to discard.
+if ! composer validate --check-lock --no-check-publish --no-check-all; then
+    echo 'composer.lock does not match composer.json; run composer update for the intended packages and commit the lock.' >&2
+    exit 1
 fi
 
 # A warm install alone does not apply patches changed since the snapshot. Reinstall the patched

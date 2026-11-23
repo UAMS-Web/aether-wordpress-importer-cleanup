@@ -1,5 +1,5 @@
 {
-    "_hash": "452b154035629de0d5c0984489844f2727525ebe4e0c7f7b171e473db02f9a4a",
+    "_hash": "cccdaf845831d083a3fe17e525c22842cf907279a6e521fb00006e3eeb6d1de7",
     "patches": {
         "pestphp/pest-plugin-mutate": [
             {
@@ -86,7 +86,7 @@
                 "package": "pestphp/pest-plugin-mutate",
                 "description": "Propagate a mutation into isolated test processes and reject a test report that ran no tests, so an isolated run cannot score a mutant killed without running a test (temporary; see UAMS-Web/UAMSWP-Logo-List#82)",
                 "url": "vendor/uams-web/patches-pest-plugin-mutate/patches/pest-plugin-mutate-isolated-processes.patch",
-                "sha256": "8bc0b3925662aaa307fd857b987d43d2c99be9194db674f99d4a771fa1017360",
+                "sha256": "12c7b125e6631b3887696c1de09d6cae74b2ffb512fd961f2a5c13cd942aab60",
                 "depth": 1,
                 "extra": {
                     "provenance": "patches-file:patches.json"
@@ -137,6 +137,16 @@
                 "description": "Run a mutant child again when it times out once, and score a timeout only when the second attempt times out too, so a transient slowdown of the machine cannot keep --min=100 out of reach (temporary; see UAMS-Web/patches-pest-plugin-mutate#30)",
                 "url": "vendor/uams-web/patches-pest-plugin-mutate/patches/pest-plugin-mutate-mutant-timeout-retry.patch",
                 "sha256": "2516b97553a04990fbdfd51a2651b7dc24e372f885d9ebd2f247742f2fa94f19",
+                "depth": 1,
+                "extra": {
+                    "provenance": "patches-file:patches.json"
+                }
+            },
+            {
+                "package": "pestphp/pest-plugin-mutate",
+                "description": "Report an existing file that cannot be read as present from the mutation stream wrapper's url_stat(), so code that reads it behind an is_file() or file_exists() check reaches the read in a mutant child (temporary; see UAMS-Web/patches-pest-plugin-mutate#52)",
+                "url": "vendor/uams-web/patches-pest-plugin-mutate/patches/pest-plugin-mutate-url-stat-unreadable.patch",
+                "sha256": "c1b7d142cfe2f37d78e898021e22bb60d499ab825fd15be09c968c1b0866186a",
                 "depth": 1,
                 "extra": {
                     "provenance": "patches-file:patches.json"

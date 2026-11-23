@@ -49,3 +49,13 @@ Every entry heading is `## YYYY-MM-DD`, a space, and a short title. Leave exactl
 **Consequence.** HTML5 parsing and serialization change some output for every environment, and each fixture change is explained in the pull request: `<tbody>` is inserted into a table with direct rows, a non-breaking space is written as `&nbsp;` instead of the raw character, `alt` with no value is written `alt=""`, a stray closing `</p>` after a table leaves an empty `<p></p>`, a `<td>` outside a table is dropped, and a `<b>` around `<p>` is kept open by the parser rather than closed before it, so `PromoteBoldToInnerStrong` also promotes the nested shape. Element names are lowercase `localName` values instead of `nodeName`, and `Dom\HTMLDocument` serializes `<embed>` as a void element, so the embed closer step is gone.
 
 **Companion.** [#6](https://github.com/UAMS-Web/aether-wordpress-importer-cleanup/issues/6), [#48](https://github.com/UAMS-Web/aether-wordpress-importer-cleanup/issues/48), [#49](https://github.com/UAMS-Web/aether-wordpress-importer-cleanup/issues/49).
+
+## 2026-11-23 Track `composer.lock` (UAMS-Web/aether-wordpress-importer-cleanup#110)
+
+**Decision.** The repository commits `composer.lock`, generated from the resolution CI would have made that day, with no package chosen or held back by hand.
+
+**Why.** With the lock ignored, every install resolved the newest release of every dependency, so a release of `uams-web/patches-pest-plugin-mutate` reached CI before the repository had moved to it and every install failed on a patch hash mismatch (#106). The ignore came from the first scaffold and was never decided; no entry named it. Of the 20 repositories that require that package, this was the only one that did not commit its lock (read 2026-11-23).
+
+**Rejected.** Pinning only the patches package to an exact version: it closes the one failure seen and leaves every other dependency free to move under CI. Keeping the lock ignored: it keeps the failure mode.
+
+**Companion.** UAMS-Web/aether-wordpress-importer-cleanup#110. Bump automation for the lock is decided separately.

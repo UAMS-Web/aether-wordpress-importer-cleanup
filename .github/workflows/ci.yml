@@ -25,8 +25,14 @@ permissions:
 
 jobs:
   checks:
-    uses: UAMS-Web/uams-ci-workflows/.github/workflows/ci.yml@v0.13.0
+    uses: UAMS-Web/uams-ci-workflows/.github/workflows/ci.yml@v0.17.0
     with:
+      # Since v0.17.0 every job runs on ubuntu-latest only unless the caller says otherwise. This
+      # library supports macOS and Windows as well as Linux, and a failure can show on one runner
+      # only (the pass-cap CLI test failed on the Windows leg alone, on an 8.3 temporary path), so
+      # each job keeps the runners its own classification names: `pest` and `mutate-ignore` on all
+      # three, the rest on Linux.
+      linux-only: false
       # On a pull request the mutate job mutates the changed PHP files under this path. On a push it
       # ignores this input and runs `composer mutate`, whose `--path=src` covers the same tree.
       mutate-paths: src
